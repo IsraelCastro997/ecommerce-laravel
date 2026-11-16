@@ -1,7 +1,7 @@
-import vue from '@vitejs/plugin-vue';
+import react from '@vitejs/plugin-react';
 import autoprefixer from 'autoprefixer';
 import laravel from 'laravel-vite-plugin';
-import path from 'path';
+import path from 'node:path';
 import tailwindcss from 'tailwindcss';
 import { defineConfig } from 'vite';
 
@@ -11,23 +11,12 @@ export default defineConfig({
             input: ['resources/js/app.ts'],
             refresh: true,
         }),
-        vue({
-            template: {
-                transformAssetUrls: {
-                    base: null,
-                    includeAbsolute: false,
-                },
-            },
-        }),
+        react(),
     ],
     resolve: {
-        alias: {
-            '@': path.resolve(__dirname, './resources/js'),
-        },
+        alias: { '@': path.resolve(__dirname, './resources/js') },
     },
     css: {
-        postcss: {
-            plugins: [tailwindcss, autoprefixer],
-        },
+        postcss: { plugins: [tailwindcss, autoprefixer] },
     },
 });

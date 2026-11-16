@@ -1,5 +1,7 @@
 # Pantallas de Refugio Outdoor
 
+Las pantallas se renderizan con React e Inertia.
+
 Refugio Outdoor es una marca de demostración. El catálogo ofrece cuatro productos ilustrativos en una sola página, con precios independientes en MXN y USD. Los formularios comerciales son vistas de muestra.
 
 | Entrada | Qué se puede ver o probar |

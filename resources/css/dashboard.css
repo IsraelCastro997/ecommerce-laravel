@@ -1,0 +1,212 @@
+.dash {
+    padding: clamp(0.7rem, 3vw, 2rem);
+    color: hsl(var(--foreground));
+}
+.dash :focus-visible {
+    outline: 2px solid #b76f20;
+    outline-offset: 3px;
+}
+.dash-intro {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: end;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: clamp(1rem, 3vw, 2rem);
+    border-radius: 0.8rem;
+    background: #193d2d;
+    color: #fff9ed;
+}
+.dash-intro p {
+    color: #f6cb8a;
+    font-size: 0.74rem;
+    font-weight: 800;
+    letter-spacing: 0.13em;
+}
+.dash-intro h1 {
+    margin: 0.25rem 0;
+    font-size: clamp(1.9rem, 4vw, 3.5rem);
+    font-weight: 820;
+    line-height: 1.08;
+    letter-spacing: -0.05em;
+}
+.dash-intro a,
+.dash-card :is(a, button) {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-size: 0.88rem;
+    font-weight: 720;
+}
+.dash-intro a:hover,
+.dash-card :is(a, button):hover {
+    text-decoration: underline;
+}
+.dash-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin: 1rem 0;
+}
+.dash-tabs button,
+.dash-modules button {
+    padding: 0.5rem 0.75rem;
+    text-align: left;
+    border-radius: 0.35rem;
+}
+.dash-tabs button {
+    border: 1px solid hsl(var(--border));
+}
+.dash-tabs button[aria-pressed='true'],
+.dash-modules button[aria-pressed='true'] {
+    color: #fff9ed;
+    background: #28523d;
+}
+.account-grid,
+.metrics-grid {
+    display: grid;
+    gap: 0.75rem;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
+}
+.dash-card {
+    min-width: 0;
+    padding: 1rem;
+    border: 1px solid hsl(var(--border));
+    background: hsl(var(--card));
+    border-radius: 0.6rem;
+}
+.dash-card h2 {
+    margin: 0.3rem 0;
+    font-size: 1.1rem;
+    font-weight: 800;
+}
+.dash-card p {
+    font-size: 0.87rem;
+    color: hsl(var(--muted-foreground));
+}
+.dash-card :is(a, button, details) {
+    margin-top: 0.55rem;
+}
+.dash-card a {
+    display: flex;
+    width: fit-content;
+}
+.dash-card summary {
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 720;
+}
+.dash-empty {
+    margin-top: 1rem;
+    padding: 1rem;
+    border: 1px dashed hsl(var(--border));
+    border-radius: 0.4rem;
+}
+.state-select {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.6rem;
+    margin-top: 0.9rem;
+    font-size: 0.85rem;
+}
+.state-select select {
+    max-width: 100%;
+    border-color: hsl(var(--border));
+    border-radius: 0.35rem;
+    background-color: hsl(var(--card));
+    color: inherit;
+}
+.admin-skeleton {
+    display: grid;
+    gap: 0.5rem;
+    margin-top: 0.65rem;
+}
+.admin-skeleton span {
+    height: 0.8rem;
+    border-radius: 0.25rem;
+    background: hsl(var(--muted));
+}
+.admin-skeleton span:nth-child(2) {
+    width: 75%;
+}
+.admin-skeleton span:nth-child(3) {
+    width: 55%;
+}
+.admin-grid {
+    display: grid;
+    grid-template-columns: 13rem minmax(0, 1fr);
+    gap: 0.75rem;
+    align-items: start;
+}
+.dash-modules {
+    display: grid;
+    padding: 0.5rem;
+}
+.dash-modules button {
+    min-height: 2.5rem;
+    margin: 0;
+}
+.dash-modules svg {
+    flex-shrink: 0;
+}
+.metric div,
+.operations div {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.5rem;
+}
+.metric svg {
+    flex-shrink: 0;
+}
+.metric strong {
+    display: block;
+    margin: 0.35rem 0;
+    font-size: 1.3rem;
+    font-weight: 850;
+}
+.metric small {
+    color: hsl(var(--muted-foreground));
+}
+.admin-panels {
+    margin-top: 0.75rem;
+}
+.sales-chart {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 0.4rem;
+    height: 9rem;
+    margin-top: 1rem;
+}
+.sales-chart div {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: end;
+    gap: 0.3rem;
+}
+.sales-chart span {
+    width: 75%;
+    border-radius: 0.25rem 0.25rem 0 0;
+    background: #54866a;
+}
+.operations {
+    margin-top: 0.8rem;
+}
+.operations div {
+    flex-wrap: wrap;
+    border-bottom: 1px solid hsl(var(--border));
+    padding: 0.5rem 0;
+    font-size: 0.83rem;
+}
+.operations dd {
+    color: hsl(var(--muted-foreground));
+}
+@media (max-width: 750px) {
+    .admin-grid {
+        grid-template-columns: 1fr;
+    }
+    .dash-modules {
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 9rem), 1fr));
+    }
+}

@@ -1,5 +1,7 @@
 # Informe de ejecución
 
+El informe documenta el arranque inicial en el commit 5d746e5. La migración posterior a React y el estado actual se registran en [TRABAJO_REALIZADO.md](TRABAJO_REALIZADO.md).
+
 ## Entorno
 
 - Windows con PHP 8.5.12, Composer 2.8.6, Node 26.10.0, npm 11.19.1 y Git 2.49.0.

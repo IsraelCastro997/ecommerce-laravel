@@ -1,53 +1,31 @@
-import { onMounted, ref } from 'vue';
+import { useState } from 'react';
 
 type Appearance = 'light' | 'dark' | 'system';
 
-export function updateTheme(value: Appearance) {
-    if (value === 'system') {
-        const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-        document.documentElement.classList.toggle('dark', systemTheme === 'dark');
-    } else {
-        document.documentElement.classList.toggle('dark', value === 'dark');
-    }
+function savedAppearance(): Appearance {
+    const saved = localStorage.getItem('appearance');
+    return saved === 'light' || saved === 'dark' ? saved : 'system';
 }
 
-const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+const scheme = window.matchMedia('(prefers-color-scheme: dark)');
 
-const handleSystemThemeChange = () => {
-    const currentAppearance = localStorage.getItem('appearance') as Appearance | null;
-    updateTheme(currentAppearance || 'system');
-};
+function applyAppearance(value: Appearance) {
+    document.documentElement.classList.toggle('dark', value === 'dark' || (value === 'system' && scheme.matches));
+}
 
 export function initializeTheme() {
-    // Initialize theme from saved preference or default to system...
-    const savedAppearance = localStorage.getItem('appearance') as Appearance | null;
-    updateTheme(savedAppearance || 'system');
-
-    // Set up system theme change listener...
-    mediaQuery.addEventListener('change', handleSystemThemeChange);
+    applyAppearance(savedAppearance());
+    scheme.addEventListener('change', () => applyAppearance(savedAppearance()));
 }
 
 export function useAppearance() {
-    const appearance = ref<Appearance>('system');
-
-    onMounted(() => {
-        initializeTheme();
-
-        const savedAppearance = localStorage.getItem('appearance') as Appearance | null;
-
-        if (savedAppearance) {
-            appearance.value = savedAppearance;
-        }
-    });
+    const [appearance, setAppearance] = useState(savedAppearance);
 
     function updateAppearance(value: Appearance) {
-        appearance.value = value;
+        setAppearance(value);
         localStorage.setItem('appearance', value);
-        updateTheme(value);
+        applyAppearance(value);
     }
 
-    return {
-        appearance,
-        updateAppearance,
-    };
+    return { appearance, updateAppearance };
 }
