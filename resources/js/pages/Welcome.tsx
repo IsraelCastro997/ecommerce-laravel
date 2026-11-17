@@ -1,7 +1,11 @@
 import '../../css/store.css';
 
-import { categories, formatPrice, products, type Currency, type Product } from '@/mocks/store';
+import DemoCart from '@/components/DemoCart';
+import { useCurrencyPreference } from '@/composables/useCurrencyPreference';
+import { DEMO_CART_LIMIT, useDemoCart } from '@/composables/useDemoCart';
+import { categories, formatPrice, products, type Product } from '@/mocks/store';
 import type { SharedData } from '@/types';
+import type { CartCurrency } from '@/types/commerce';
 import { Head, Link, usePage } from '@inertiajs/react';
 import {
     ArrowDown,
@@ -33,7 +37,7 @@ const topics = ['Contacto', 'Preguntas frecuentes', 'Envíos y devoluciones', 'T
 
 export default function Welcome() {
     const { auth } = usePage<SharedData>().props;
-    const [currency, setCurrency] = useState<Currency>('MXN');
+    const [currency, setCurrency] = useCurrencyPreference();
     const [query, setQuery] = useState('');
     const [category, setCategory] = useState('');
     const [brand, setBrand] = useState('');
@@ -42,12 +46,11 @@ export default function Welcome() {
     const [sort, setSort] = useState('');
     const [list, setList] = useState(false);
     const [panel, setPanel] = useState<Panel | null>(null);
-    const [bag, setBag] = useState<Record<string, number>>({});
+    const cart = useDemoCart();
     const searchInput = useRef<HTMLInputElement>(null);
     const dialog = useRef<HTMLDialogElement>(null);
     const closeButton = useRef<HTMLButtonElement>(null);
-    const items = products.filter((product) => bag[product.id]);
-    const itemCount = Object.values(bag).reduce((count, quantity) => count + quantity, 0);
+    const { itemCount } = cart;
 
     const phrase = query.trim().toLocaleLowerCase('es-MX');
     const visible = products.filter(
@@ -78,16 +81,6 @@ export default function Welcome() {
         setSort('');
     }
 
-    function changeQuantity(product: Product, delta: number | 'remove') {
-        setBag((previous) => {
-            const next = { ...previous };
-            const quantity = delta === 'remove' ? 0 : Math.min(9, (previous[product.id] || 0) + delta);
-            if (quantity > 0) next[product.id] = quantity;
-            else delete next[product.id];
-            return next;
-        });
-    }
-
     return (
         <div className="refugio">
             <Head title="Refugio Outdoor · Equipo para explorar" />
@@ -115,7 +108,7 @@ export default function Welcome() {
                             value={currency}
                             aria-label="Moneda"
                             onChange={(event) => {
-                                setCurrency(event.target.value as Currency);
+                                setCurrency(event.target.value as CartCurrency);
                                 setMaximum('');
                             }}
                         >
@@ -384,12 +377,15 @@ export default function Welcome() {
                                     <strong>{formatPrice(product.prices[currency], currency)}</strong> · Precio estimado
                                 </p>
                                 <p>{product.available ? 'Disponible en la muestra' : 'Agotado en la muestra'}</p>
+                                {(cart.quantities[product.id] ?? 0) >= DEMO_CART_LIMIT && (
+                                    <p>Límite de {DEMO_CART_LIMIT} unidades por producto de muestra.</p>
+                                )}
                                 <button
                                     className="store-button primary"
                                     type="button"
-                                    disabled={!product.available}
+                                    disabled={!product.available || (cart.quantities[product.id] ?? 0) >= DEMO_CART_LIMIT}
                                     onClick={() => {
-                                        changeQuantity(product, 1);
+                                        cart.changeQuantity(product, 1);
                                         setPanel({ type: 'cart' });
                                     }}
                                 >
@@ -415,50 +411,7 @@ export default function Welcome() {
                             </>
                         );
                     })()}
-                {panel?.type === 'cart' && (
-                    <>
-                        <h2 id="panel-title">Tu carrito</h2>
-                        {!items.length ? (
-                            <p className="store-empty">Tu carrito de demostración está vacío.</p>
-                        ) : (
-                            <ul className="cart-list">
-                                {items.map((product) => (
-                                    <li key={product.id}>
-                                        <strong>{product.name}</strong>
-                                        <span>{formatPrice(product.prices[currency], currency)} por unidad · estimado</span>
-                                        <div className="cart-controls">
-                                            <button
-                                                aria-label={`Quitar una unidad de ${product.name}`}
-                                                type="button"
-                                                onClick={() => changeQuantity(product, -1)}
-                                            >
-                                                −
-                                            </button>
-                                            <output aria-label={`Cantidad de ${product.name}`}>{bag[product.id]}</output>
-                                            <button
-                                                aria-label={`Agregar una unidad de ${product.name}`}
-                                                disabled={bag[product.id] >= 9}
-                                                type="button"
-                                                onClick={() => changeQuantity(product, 1)}
-                                            >
-                                                +
-                                            </button>
-                                            <button className="text-button" type="button" onClick={() => changeQuantity(product, 'remove')}>
-                                                Eliminar
-                                            </button>
-                                        </div>
-                                    </li>
-                                ))}
-                            </ul>
-                        )}
-                        <p>Subtotal, envío e impuestos pendientes de confirmación.</p>
-                        {items.length > 0 && (
-                            <button className="store-button primary" type="button" onClick={() => setPanel({ type: 'checkout' })}>
-                                Ver checkout demo <ArrowRight size={18} />
-                            </button>
-                        )}
-                    </>
-                )}
+                {panel?.type === 'cart' && <DemoCart cart={cart} currency={currency} onCheckout={() => setPanel({ type: 'checkout' })} />}
                 {panel?.type === 'checkout' && (
                     <>
                         <h2 id="panel-title">Confirmar pedido</h2>
@@ -466,6 +419,9 @@ export default function Welcome() {
                             Vista previa de {itemCount} artículos en {currency}. Introduce solo datos ficticios para explorar el formulario.
                         </p>
                         <div className="checkout-fields">
+                            <label>
+                                Correo del comprador (demo) <input type="email" autoComplete="off" placeholder="comprador@example.test" />
+                            </label>
                             <label>
                                 Dirección de entrega <input placeholder="Calle y número" />
                             </label>
@@ -482,7 +438,20 @@ export default function Welcome() {
                                 Cupón <input placeholder="Código de muestra" />
                             </label>
                         </div>
-                        <p>Resumen pendiente de validación del servidor.</p>
+                        <section aria-label="Resumen del checkout demo">
+                            <h3 className="related-heading">Resumen de artículos</h3>
+                            <ul className="cart-list">
+                                {cart.items.map((product) => (
+                                    <li key={product.id}>
+                                        <strong>
+                                            {cart.quantities[product.id]} × {product.name}
+                                        </strong>
+                                        <span>{formatPrice(product.prices[currency], currency)} por unidad · estimado</span>
+                                    </li>
+                                ))}
+                            </ul>
+                            <p>Subtotal, descuento, IVA (16 %), envío y total en MXN y USD pendientes de cotización del servidor.</p>
+                        </section>
                         <div className="cart-controls">
                             <button className="text-button" type="button" onClick={() => setPanel({ type: 'cart' })}>
                                 <ArrowLeft size={17} /> Volver al carrito

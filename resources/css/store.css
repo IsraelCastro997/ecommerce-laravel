@@ -548,3 +548,10 @@
         padding: 1rem 0;
     }
 }
+.cart-preview {
+    display: grid;
+    gap: 0.35rem;
+    margin: 0.8rem 0;
+    font-size: 0.85rem;
+    font-weight: 650;
+}

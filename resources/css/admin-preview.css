@@ -1,0 +1,129 @@
+.admin-preview-heading,
+.admin-page-controls,
+.admin-page-controls nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.65rem;
+    align-items: center;
+    justify-content: space-between;
+}
+.admin-preview-heading > div {
+    flex: 1 1 15rem;
+}
+.admin-filters {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 10rem), 1fr));
+    gap: 0.75rem;
+    margin: 1rem 0;
+}
+.admin-filters label,
+.admin-control,
+.account-preference {
+    display: grid;
+    min-width: 0;
+    gap: 0.35rem;
+    font-size: 0.85rem;
+    font-weight: 650;
+}
+.admin-filters :is(input, select, textarea),
+.account-preference select {
+    width: 100%;
+    min-width: 0;
+    min-height: 2.6rem;
+    border: 1px solid hsl(var(--border));
+    border-radius: 0.4rem;
+    background-color: hsl(var(--background));
+    color: inherit;
+    padding: 0.45rem 0.55rem;
+}
+.admin-filters textarea {
+    min-height: 4.5rem;
+    resize: vertical;
+}
+.admin-dialog {
+    position: fixed;
+    width: min(35rem, calc(100% - 1.5rem));
+    max-height: calc(100% - 1.5rem);
+    overflow-y: auto;
+    inset: 0;
+    margin: auto;
+    padding: 1rem;
+    border: 1px solid hsl(var(--border));
+    border-radius: 0.7rem;
+    background: hsl(var(--card));
+    color: hsl(var(--foreground));
+}
+.admin-dialog::backdrop {
+    background: #172c22a8;
+}
+.admin-table-wrap {
+    max-width: 100%;
+    overflow: auto;
+    border: 1px solid hsl(var(--border));
+    border-radius: 0.5rem;
+}
+.admin-table {
+    width: 100%;
+    min-width: 34rem;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+    text-align: left;
+}
+.admin-table caption {
+    padding: 0.65rem;
+    color: hsl(var(--muted-foreground));
+    text-align: left;
+}
+.admin-table :is(th, td) {
+    padding: 0.6rem;
+    border-top: 1px solid hsl(var(--border));
+    vertical-align: middle;
+}
+.admin-table thead {
+    background: hsl(var(--muted));
+}
+.admin-table td,
+.admin-table th {
+    min-width: 5.25rem;
+}
+.admin-table td button {
+    margin: 0;
+}
+.admin-status {
+    display: inline-block;
+    padding: 0.18rem 0.48rem;
+    border-radius: 0.3rem;
+    background: hsl(var(--muted));
+    font-size: 0.76rem;
+    font-weight: 700;
+}
+.admin-preview-action,
+.admin-page-controls button {
+    padding: 0.42rem 0.65rem;
+    border: 1px solid hsl(var(--border));
+    border-radius: 0.35rem;
+}
+.admin-preview-action:not(:disabled) {
+    background: #28523d;
+    color: #fff9ed;
+}
+.dash button:disabled {
+    cursor: not-allowed;
+    opacity: 0.65;
+}
+.dash button:disabled:hover {
+    text-decoration: none;
+}
+.admin-page-controls {
+    margin-top: 0.55rem;
+}
+.account-status {
+    margin: 0.65rem 0;
+}
+.account-preference {
+    margin-top: 0.7rem;
+}
+.account-order {
+    padding: 0.65rem 0;
+    border-top: 1px solid hsl(var(--border));
+}

@@ -1,4 +1,4 @@
-export type Currency = 'MXN' | 'USD';
+import type { CartCurrency } from '@/types/commerce';
 
 export const categories = ['Mochilas', 'Campamento', 'Hidratación', 'Iluminación'] as const;
 
@@ -51,20 +51,41 @@ export const products = [
 
 export type Product = (typeof products)[number];
 
-export function formatPrice(amount: number, currency: Currency) {
+export function formatPrice(amount: number, currency: CartCurrency) {
     return new Intl.NumberFormat('es-MX', { style: 'currency', currency, currencyDisplay: 'code' }).format(amount);
 }
 
 export const dashboard = {
     metrics: [
         { label: 'Ventas del periodo', value: 'MXN 124,580', note: 'Últimos 7 días' },
-        { label: 'Pedidos', value: '248', note: 'Últimos 7 días' },
+        { label: 'Pedidos pendientes', value: '248', note: 'Últimos 7 días' },
         { label: 'Productos activos', value: '1,284', note: 'Catálogo de ejemplo' },
         { label: 'Stock bajo', value: '16', note: 'Productos por revisar' },
+        { label: 'Productos agotados', value: '9', note: 'Catálogo de ejemplo' },
+        { label: 'Pagos pendientes', value: '12', note: 'Conciliación demo' },
+    ],
+    topProducts: [
+        { name: 'Mochila Sierra 35 L', units: 29 },
+        { name: 'Botella Bruma 750 ml', units: 21 },
+        { name: 'Tienda Nómada 2P', units: 12 },
     ],
     sales: [12300, 16800, 14700, 20100, 18400, 25200, 17080],
     orders: [
-        { id: 'RF-1042', date: '16 nov 2026', status: 'Preparando', total: 'MXN 1,899.00' },
-        { id: 'RF-1038', date: '11 nov 2026', status: 'Entregado', total: 'MXN 649.00' },
+        {
+            id: 'RF-1042',
+            date: '16 nov 2026',
+            status: 'Preparando',
+            total: 'MXN 1,899.00',
+            item: '1 × Mochila Sierra 35 L',
+            tracking: 'Preparación de envío (ejemplo)',
+        },
+        {
+            id: 'RF-1038',
+            date: '11 nov 2026',
+            status: 'Entregado',
+            total: 'MXN 649.00',
+            item: '1 × Botella Bruma 750 ml',
+            tracking: 'Entrega registrada (ejemplo)',
+        },
     ],
 };

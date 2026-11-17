@@ -29,7 +29,7 @@
 
 - Conectar el catálogo, el inventario, el carrito, el checkout, las direcciones, los pedidos y los datos administrativos a contratos reales. Aplicar la autorización de administración y la asignación de roles de Spatie en el servidor.
 - Mantener Inertia al conectar cualquier módulo Livewire al frontend. Acordar los puntos de montaje y las acciones de servidor con el responsable.
-- Conservar la paginación nativa de Laravel. La implementación de jTable u otra biblioteca de tablas queda para la fase manual solicitada.
+- Conservar la paginación nativa de Laravel. La integración manual de DataTables se precisó en el SDD-02.
 - Google OAuth, Stripe, Banxico, Redis, Elasticsearch, pruebas de volumen y conexión de la pantalla de errores a las respuestas HTTP.
 
 ## Referencias del proyecto
@@ -37,3 +37,12 @@
 - [Informe de ejecución y comandos](EXECUTION_REPORT.md)
 - [Inventario de pantallas y capturas](FRONTEND_COMPONENTS.md)
 - [Contratos e integraciones pendientes](BACKEND_HANDOFF.md)
+
+
+## 6. Consolidación SDD-02
+
+- Audité rutas, esquema, versiones y Spatie. La cuenta conserva la autenticación Laravel y el dashboard administrativo conserva su alcance de demostración.
+- Incorporé persistencia local del carrito de demostración y preferencia de moneda compartida entre tienda y cuenta. Añadí estados ilustrativos de disponibilidad y resumen de checkout sin cobro.
+- Amplié los módulos administrativos con tablas, formularios de muestra, filtros y estados. Preparé componentes Blade de presentación para la futura administración Livewire. Livewire 4 se conserva por decisión del responsable.
+- Registré la diferencia con el Word original, que pide Livewire v3 y Alpine, y los pendientes de evaluación. Los modelos, las relaciones y la protección real de la administración quedaron documentados para la implementación manual.
+- Consulta [el resultado de SDD-02](iterations/SDD-02-RESULT.md) y [las verificaciones](testing/SDD-02-TESTS.md).
