@@ -15,6 +15,11 @@ class StockReservation extends Model
         ];
     }
 
+    public function cartItem(): BelongsTo
+    {
+        return $this->belongsTo(CartItem::class);
+    }
+
     public function orderItem(): BelongsTo
     {
         return $this->belongsTo(OrderItem::class);

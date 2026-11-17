@@ -17,3 +17,12 @@ El checkout de demostración conserva el pago deshabilitado. El carrito guarda S
 - [Resultado de SDD-02 y matriz del enunciado](docs/iterations/SDD-02-RESULT.md)
 - [Contrato y pendientes de servidor](docs/contracts/BACKEND_CONTRACTS.md)
 - [Verificación de SDD-02](docs/testing/SDD-02-TESTS.md)
+
+## Documentos de planificación
+
+- [Instrucciones vigentes para agentes](AGENTS.md)
+- [Plan inicial de bootstrap](AGENTS_FRONTEND_BOOTSTRAP.md)
+- [Especificación inicial del frontend](SDD_FRONTEND_BOOTSTRAP_ECOMMERCE.md)
+- [README original de planificación](docs/history/README_ORIGINAL.md)
+
+El README original de planificación está fechado el 14 de noviembre de 2026 y describe el planteamiento inicial con Vue. El frontend actual utiliza React con Inertia y Livewire 4. Los planes de bootstrap se conservan como antecedentes. El historial de trabajo documenta las decisiones posteriores y la excepción autorizada para crear modelos Eloquent nuevos.

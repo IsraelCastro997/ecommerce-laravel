@@ -98,4 +98,14 @@ class Product extends Model
     {
         return $this->hasMany(OrderItem::class);
     }
+    public function images(): HasMany
+{
+    return $this->hasMany(ProductImage::class)
+        ->orderBy('sort_order');
+}
+
+public function purchaseOrderItems(): HasMany
+{
+    return $this->hasMany(PurchaseOrderItem::class);
+}
 }
