@@ -1,8 +1,8 @@
 # Inventario de Eloquent y esquema
 
-La revisión se hizo sobre `database/migrations` y `app/Models`. El único modelo propio encontrado es `User`. Sus atributos asignables son `name`, `email` y `password`; el modelo oculta la contraseña y el token de sesión persistente. Los modelos `Role` y `Permission` pertenecen a Spatie. La definición de modelos, factories y pruebas de relaciones queda a cargo del desarrollador según el AGENTS.md vigente.
+La revisión se hizo sobre `database/migrations` y `app/Models`. Se generaron 34 modelos con `artisan make:model` y se completó su configuración Eloquent a partir del esquema local. `User` conserva el flujo de login del starter y sus atributos asignables `name`, `email` y `password`. Spatie conserva sus modelos `Role` y `Permission`. Cualquier ajuste en `User`, factories y pruebas backend queda a cargo del desarrollador.
 
-| Dominio | Tablas encontradas | Relaciones y particularidades para implementar |
+| Dominio | Tablas encontradas | Relaciones y particularidades del esquema |
 |---|---|---|
 | Identidad | `users`, `customer_profiles`, `customer_addresses`, `social_accounts` | Perfil 1:1 mediante `user_id` como PK; direcciones e identidades 1:N. Identidad externa única por proveedor e ID. |
 | Roles | `roles`, `permissions`, `model_has_roles`, `model_has_permissions`, `role_has_permissions` | Reutilizar la configuración y los modelos de Spatie. El modelo `User` todavía carece de `HasRoles`. |
@@ -26,3 +26,26 @@ La revisión se hizo sobre `database/migrations` y `app/Models`. El único model
 - Verificación histórica en MariaDB 10.11.16, 10 migraciones e índice `FULLTEXT`. En esta iteración se verificó el estado de 10 migraciones en SQLite, pendiente ejecutar pruebas de relaciones y validación comercial en MariaDB desechable.
 
 [Relaciones Eloquent](https://laravel.com/docs/12.x/eloquent-relationships)
+
+## Modelos creados
+
+Se crearon 34 clases para las tablas disponibles. El pivote `product_categories` se cubre con una relación muchos a muchos. `ProductAttributeValue` se usa como modelo pivote de la relación por su columna `value` y su clave compuesta.
+
+| Dominio | Clases creadas |
+|---|---|
+| Identidad | `CustomerProfile`, `CustomerAddress`, `SocialAccount` |
+| Catálogo | `Brand`, `Category`, `Product`, `ProductAttribute`, `ProductAttributeValue` |
+| Proveedores | `Supplier`, `SupplierProduct` |
+| Inventario | `Warehouse`, `InventoryBalance`, `InventoryLot`, `InventoryMovement` |
+| Divisas y precios | `Currency`, `ExchangeRate`, `ExchangeRateSyncLog`, `Market`, `PricingPolicyVersion`, `ProductPricing`, `PricePublication`, `ProductPriceSnapshot`, `PriceHistory` |
+| Carrito y pedidos | `Cart`, `CartItem`, `Order`, `OrderItem`, `StockReservation`, `StockAllocation` |
+| Pagos | `PaymentTransaction`, `StripeEvent` |
+| Búsqueda e integraciones | `OutboxEvent`, `SearchSynonym`, `IntegrationSyncLog` |
+
+Las clases se limitan a las tablas existentes. Las variantes, imágenes, compras y recepciones requieren primero un esquema aprobado. Spatie mantiene sus propios modelos de roles y permisos.
+
+**Verificación.** Pasaron la sintaxis PHP y Pint para los 34 archivos nuevos. En SQLite local, con `PRAGMA query_only=ON`, se comprobaron 34 tablas de modelo, 83 relaciones ejecutadas y 30 casts decimales. Se verificó la configuración de asignación masiva de campos sensibles y se corrigió `Market` para reflejar que su tabla carece de timestamps. La comprobación de esta entrega no cubrió MariaDB ni operaciones de escritura.
+
+**Login.** El flujo actual queda a cargo del guard `web` de Laravel con sesiones. `LoginRequest` usa `Auth::attempt` y `AuthenticatedSessionController` regenera la sesión al autenticar. `User.php` permanece a cargo del desarrollador y Spatie queda pendiente de integración en ese modelo para los roles y permisos.
+
+[Casts de Eloquent](https://laravel.com/docs/12.x/eloquent-mutators)

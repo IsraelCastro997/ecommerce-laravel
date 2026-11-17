@@ -46,3 +46,9 @@
 - Amplié los módulos administrativos con tablas, formularios de muestra, filtros y estados. Preparé componentes Blade de presentación para la futura administración Livewire. Livewire 4 se conserva por decisión del responsable.
 - Registré la diferencia con el Word original, que pide Livewire v3 y Alpine, y los pendientes de evaluación. Los modelos, las relaciones y la protección real de la administración quedaron documentados para la implementación manual.
 - Consulta [el resultado de SDD-02](iterations/SDD-02-RESULT.md) y [las verificaciones](testing/SDD-02-TESTS.md).
+
+## 7. Creación de modelos Eloquent
+
+El responsable autorizó una excepción limitada al alta de modelos nuevos en `app/Models`. Se crearon 34 clases con Artisan y se definieron relaciones, claves, casts y protección contra asignación masiva a partir de las tablas existentes. El login conserva el guard `web` y la sesión nativa de Laravel. La configuración de `User` y la integración de roles siguen a cargo del desarrollador.
+
+Se verificaron 83 relaciones y 30 casts decimales con SQLite en modo de solo lectura. [Inventario y verificación de Eloquent](architecture/ELOQUENT_MODELS.md)
