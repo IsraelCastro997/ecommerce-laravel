@@ -1,5 +1,6 @@
 import { externalProductImage } from './catalog-presentation.js';
 import './dashboard-ui.js';
+import './product-form.js';
 import './google-sign-in.js';
 import { estimate, checkoutItems } from './checkout-presentation.js';
 
@@ -463,10 +464,21 @@ document.addEventListener('alpine:init', () => {
    }));
 
    Alpine.data('productPreview', () => ({
-      init() { void Alpine.store('shop').ensureProducts(); },
+      selected: null, loading: true, error: '',
+      async init() {
+         const slug = decodeURIComponent(location.pathname.split('/').pop());
+         try {
+            const response = await fetch('/storefront/products/by-id/' + encodeURIComponent(slug), {headers:{Accept:'application/json'}});
+            if (!response.ok) throw new Error('No se pudo cargar el producto.');
+            this.selected = normalizeProduct((await response.json()).data);
+            const shop = Alpine.store('shop');
+            if (!shop.products.some(p => p.id === this.selected.id)) shop.products.push(this.selected);
+         } catch(error) { this.error = error.message; }
+         finally { this.loading = false; }
+      },
       get product() {
          const id = decodeURIComponent(location.pathname.split('/').pop());
-         return Alpine.store('shop').products.find(p => String(p.id) === id) ?? null;
+         return this.selected ?? Alpine.store('shop').products.find(p => String(p.id) === id) ?? null;
       },
       quantity: 1,
       imageFailed: false,

@@ -137,7 +137,7 @@ class CheckoutController extends Controller
                 $subtotal += $lineSubtotal;
 
                 $lines[] = compact(
-                    'product', 'item', 'unit', 'lineSubtotal', 'balances',
+                    'product', 'item', 'unit', 'lineSubtotal', 'balances', 'price',
                 );
             }
 
@@ -187,6 +187,8 @@ class CheckoutController extends Controller
                     'name_snapshot' => $line['product']->name,
                     'quantity' => $line['item']['quantity'],
                     'unit_price' => $this->decimal($line['unit']),
+                    'price_mxn' => $line['price']->price_mxn,
+                    'price_usd' => $line['price']->price_usd,
                     'tax_total' => $this->decimal($lineTax),
                     'discount_total' => '0.00',
                     'line_total' => $this->decimal(

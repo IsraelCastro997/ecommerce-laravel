@@ -13,6 +13,8 @@ class OrderItem extends Model
         return [
             'quantity' => 'integer',
             'unit_price' => 'decimal:2',
+            'price_mxn' => 'decimal:2',
+            'price_usd' => 'decimal:2',
             'tax_total' => 'decimal:2',
             'discount_total' => 'decimal:2',
             'line_total' => 'decimal:2',

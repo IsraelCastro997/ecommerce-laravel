@@ -11,13 +11,16 @@ use Illuminate\Http\JsonResponse;
 
 class DashboardController extends Controller
 {
-    public function orders(): JsonResponse
+    public function orders(DashboardPeriodRequest $request): JsonResponse
     {
         return response()->json(
             Order::query()
                 ->with('items')
+                ->when($request->validated('from'), fn ($q, $from) => $q->where('created_at', '>=', CarbonImmutable::parse($from)->startOfDay()))
+                ->when($request->validated('until'), fn ($q, $until) => $q->where('created_at', '<=', CarbonImmutable::parse($until)->endOfDay()))
+                ->when($request->validated('currency'), fn ($q, $currency) => $q->where('currency', $currency))
                 ->latest('id')
-                ->paginate(10)
+                ->paginate(10)->withQueryString()
         );
     }
 
@@ -62,8 +65,10 @@ class DashboardController extends Controller
                 'id',
                 'paid_at',
                 'currency',
-                'grand_total',
+                'grand_total', 'subtotal', 'discount_total', 'exchange_rate_value',
             ])
+            ->withSum('items as cost_mxn', 'allocated_cost_mxn')
+            ->withCount(['items', 'items as missing_costs' => fn ($q) => $q->whereNull('allocated_cost_mxn')])
             ->cursor();
 
         foreach ($orders as $order) {
@@ -77,6 +82,8 @@ class DashboardController extends Controller
                     'currency' => $currency,
                     'total' => '0.00',
                     'orders' => 0,
+                    'profit' => '0.00',
+                    'orders_without_cost' => 0,
                 ];
             }
 
@@ -86,10 +93,24 @@ class DashboardController extends Controller
                 2
             );
 
+            // allocated_cost_mxn is the TOTAL historical cost of the line, not unit cost.
+            $rate = $currency === 'MXN' ? '1' : $order->exchange_rate_value;
+            if (!$order->items_count || $order->missing_costs || !$rate || bccomp((string) $rate, '0', 8) <= 0) {
+                $sales[$key]['orders_without_cost']++;
+                $sales[$key]['profit'] = null;
+            } elseif ($sales[$key]['profit'] !== null) {
+                $cost = bcdiv((string) $order->cost_mxn, (string) $rate, 8);
+                $profit = bcsub(bcsub((string) $order->subtotal, (string) $order->discount_total, 8), $cost, 8);
+                $sales[$key]['profit'] = bcadd($sales[$key]['profit'], $profit, 8);
+            }
             $sales[$key]['orders']++;
         }
 
         $rows = collect($sales)
+            ->map(function ($row) {
+                if ($row['profit'] !== null) $row['profit'] = bcadd($row['profit'], bccomp($row['profit'], '0', 8) < 0 ? '-0.005' : '0.005', 2);
+                return $row;
+            })
             ->sortBy([
                 ['sale_date', 'asc'],
                 ['currency', 'asc'],

@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Route;
     //Fetch store Products
     Route::prefix('storefront')->name('products.')->group(function (): void {
         Route::get('/products', [CatalogController::class, 'index'])->name('index');
+        Route::get('/products/by-id/{product}', [CatalogController::class, 'show'])->name('by-id');
         Route::get('/filters', [CatalogController::class, 'filters'])->name('filters');
 
         Route::post('/products/loockup',[CatalogController::class,'lookup'])->name('lockup');

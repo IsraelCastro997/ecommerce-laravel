@@ -290,7 +290,11 @@ class CatalogQueryService
             'sku' => $product->sku,
             'slug' => $product->slug,
             'name' => $product->name,
-            'detail' => $product->description ?? '',
+            'detail' => $product->long_description ?? $product->description ?? '',
+            'short_description' => $product->short_description ?? '',
+            'long_description' => $product->long_description ?? $product->description ?? '',
+            'available_from' => $product->available_from?->toIso8601String(),
+            'available_until' => $product->available_until?->toIso8601String(),
 
             'category' => $product->primaryCategory?->name,
             'brand' => $product->brand?->name,
@@ -304,10 +308,8 @@ class CatalogQueryService
                 'USD' => (float) $snapshot->price_usd,
             ],
 
-            'image' => sprintf(
-                'https://picsum.photos/seed/product-%d/640/640',
-                $product->id
-            ),
+            'image' => ($product->image_url ?: sprintf('https://picsum.photos/seed/product-%d/640/640', $product->id)),
+            'image_url' => ($product->image_url ?: sprintf('https://picsum.photos/seed/product-%d/640/640', $product->id)),
         ];
     }
 }

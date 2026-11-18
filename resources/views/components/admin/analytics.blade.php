@@ -10,17 +10,18 @@
  @else
  <div class="ro-metrics" aria-live="polite">
   <article><span>Ventas del periodo</span><strong x-text="money(sales)"></strong><small>Ventas pagadas</small></article>
-  <article><span>Productos totales</span><strong x-text="summary.products_total ?? 0"></strong><small>Productos registrados en el catálogo</small></article>
+  <article><span>Ganancia bruta</span><strong x-text="profit === null ? 'Sin costo completo' : money(profit)"></strong><small>Sin IVA ni envío; descuenta el costo histórico</small></article>
   <article><span>Pedidos</span><strong x-text="orders"></strong><small>Pedidos pagados del periodo</small></article>
   <article><span>Ticket promedio</span><strong x-text="money(orders ? sales / orders : 0)"></strong><small>Promedio de ventas pagadas</small></article>
  </div>
  <div class="ro-chart-grid">
-  <section class="ro-panel ro-chart-panel" aria-labelledby="ro-chart-heading"><header class="ro-section-heading"><div><h2 id="ro-chart-heading">Cada día cuenta</h2><p>Comparativa diaria de ventas pagadas</p></div><div class="ro-toggle" aria-label="Serie de la gráfica"><button type="button" :aria-pressed="metric === 'sales'" @click="metric = 'sales'">Ventas</button></div></header>
+  <section class="ro-panel ro-chart-panel" aria-labelledby="ro-chart-heading"><header class="ro-section-heading"><div><h2 id="ro-chart-heading">Cada día cuenta</h2><p>Ventas cobradas y ganancia bruta diaria</p></div><div class="ro-toggle" aria-label="Serie de la gráfica"><button type="button" :aria-pressed="metric === 'sales'" @click="metric = 'sales'">Ventas</button><button type="button" :aria-pressed="metric === 'profit'" @click="metric = 'profit'">Ganancias</button></div></header>
+   <p class="ro-footnote" x-show="missingCosts" x-cloak>Hay <span x-text="missingCosts"></span> pedidos sin costo o tipo de cambio histórico. Su día se muestra sin ganancia calculada.</p>
    <p class="ro-empty" x-show="!days.length">No hay ventas pagadas en este periodo y moneda.</p>
    <div class="ro-bars" x-show="days.length" role="img" :aria-label="(metric === 'sales' ? 'Ventas' : 'Ganancias') + ' en ' + currency + '. Datos detallados debajo.'">
-    <template x-for="day in days" :key="day.date"><div class="ro-bar-column"><span class="ro-bar-number" x-text="day[metric].toLocaleString('es-MX')"></span><div class="ro-bar-track"><div class="ro-bar" :class="{ 'ro-bar-profit': metric === 'profit' }" :style="{height: (day[metric] / maximum * 100) + '%'}"></div></div><span class="ro-bar-date" x-text="dayLabel(day.date)"></span></div></template>
+    <template x-for="day in days" :key="day.date"><div class="ro-bar-column"><span class="ro-bar-number" x-text="day[metric] === null ? 'Sin costo' : money(day[metric])"></span><div class="ro-bar-track"><div class="ro-bar" :class="{ 'ro-bar-profit': metric === 'profit', 'ro-bar-loss': day[metric] < 0 }" :style="{height: (Math.abs(day[metric] ?? 0) / maximum * 100) + '%'}"></div></div><span class="ro-bar-date" x-text="dayLabel(day.date)"></span></div></template>
    </div>
-   <details class="ro-chart-data"><summary>Ver datos de la gráfica</summary><div class="ro-table-region"><table><caption class="sr-only">Ventas y pedidos pagados del periodo</caption><thead><tr><th scope="col">Fecha</th><th scope="col">Ventas</th><th scope="col">Pedidos</th></tr></thead><tbody><template x-for="day in days" :key="day.date"><tr><th scope="row" x-text="dayLabel(day.date)"></th><td x-text="money(day.sales)"></td><td x-text="day.orders"></td></tr></template></tbody></table></div></details>
+   <details class="ro-chart-data"><summary>Ver datos de la gráfica</summary><div class="ro-table-region"><table><caption class="sr-only">Ventas y pedidos pagados del periodo</caption><thead><tr><th scope="col">Fecha</th><th scope="col">Ventas</th><th scope="col">Ganancia bruta</th><th scope="col">Pedidos</th></tr></thead><tbody><template x-for="day in days" :key="day.date"><tr><th scope="row" x-text="dayLabel(day.date)"></th><td x-text="money(day.sales)"></td><td x-text="day.profit === null ? 'Sin costo completo' : money(day.profit)"></td><td x-text="day.orders"></td></tr></template></tbody></table></div></details>
   </section>
   <x-admin.top-products-panel />
  </div>

@@ -1,1 +1,1 @@
-<div class="store-wrap blade-page"><x-admin.workspace title="Edición de producto" dataset="products"  /></div>
+<div class="store-wrap blade-page"><div class="blade-admin-workspace"><x-admin.navigation /><div class="ro-dashboard min-w-0"><header class="ro-hero"><h1>Editar producto</h1></header><x-admin.product-form  :product="$product" /></div></div></div>

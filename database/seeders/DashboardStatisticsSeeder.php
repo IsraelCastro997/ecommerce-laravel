@@ -54,6 +54,10 @@ class DashboardStatisticsSeeder extends Seeder
                         'name_snapshot' => $product->name,
                         'quantity' => $quantity,
                         'unit_price' => bcdiv((string) $unit, '100', 2),
+                        'price_mxn' => $price->price_mxn,
+                        'price_usd' => $price->price_usd,
+                        // Demo: costo total del renglón al 65 % y tipo de cambio ficticio de 20 MXN/USD.
+                        'allocated_cost_mxn' => bcmul(bcmul(bcdiv((string) $lineSubtotal, '100', 4), $currency === 'USD' ? '20' : '1', 4), '0.65', 4),
                         'tax_total' => bcdiv((string) $lineTax, '100', 2),
                         'discount_total' => '0.00',
                         'line_total' => bcdiv((string) ($lineSubtotal + $lineTax), '100', 2),
@@ -67,6 +71,7 @@ class DashboardStatisticsSeeder extends Seeder
                     'customer_email' => 'estadisticas.demo@example.test',
                     'status' => $i <= 30 ? 'paid' : 'pending_payment',
                     'currency' => $currency,
+                    'exchange_rate_value' => '20.00000000',
                     'subtotal' => bcdiv((string) $subtotal, '100', 2),
                     'tax_total' => bcdiv((string) $tax, '100', 2),
                     'discount_total' => '0.00', 'shipping_total' => '0.00',
@@ -78,6 +83,25 @@ class DashboardStatisticsSeeder extends Seeder
                     OrderItem::forceCreate(['order_id' => $order->id] + $line);
                 }
                 $created++;
+            }
+            // Completa solo los registros de esta muestra creados en ejecuciones anteriores.
+            $demoOrders = Order::where('order_number', 'like', 'DEMO-STATS-%')
+                ->where('customer_email', 'estadisticas.demo@example.test')->with('items')->get();
+            foreach ($demoOrders as $order) {
+                if ($order->exchange_rate_value === null || ($order->currency === 'MXN' && bccomp($order->exchange_rate_value, '1', 8) === 0)) {
+                    $order->exchange_rate_value = '20.00000000';
+                    $order->save();
+                }
+                foreach ($order->items as $item) {
+                    // Precios históricos de la muestra, con el mismo tipo de cambio ficticio.
+                    $item->price_mxn = $order->currency === 'MXN' ? $item->unit_price : bcmul($item->unit_price, '20', 2);
+                    $item->price_usd = $order->currency === 'USD' ? $item->unit_price : bcdiv($item->unit_price, '20', 2);
+                    $item->save();
+                    if ($item->allocated_cost_mxn !== null) continue;
+                    $net = bcsub(bcmul($item->unit_price, (string) $item->quantity, 4), $item->discount_total, 4);
+                    $item->allocated_cost_mxn = bcmul(bcmul($net, $order->currency === 'USD' ? '20' : '1', 4), '0.65', 4);
+                    $item->save();
+                }
             }
             return $created;
         });

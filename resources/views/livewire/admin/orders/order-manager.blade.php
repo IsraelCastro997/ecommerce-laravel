@@ -1,1 +1,1 @@
-<div class="store-wrap blade-page"><x-admin.navigation /><x-admin.order-list /></div>
+<div class="store-wrap blade-page"><div class="blade-admin-workspace"><x-admin.navigation /><div class="min-w-0"><x-admin.order-list /></div></div></div>

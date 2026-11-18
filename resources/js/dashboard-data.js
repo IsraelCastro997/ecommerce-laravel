@@ -1,8 +1,7 @@
 import fixture from './demo/dashboard.json' with { type: 'json' };
 
-// Replace null with a human-provided GET endpoint implementing the DataTables
-// server-side protocol. No database IDs or commercial API routes are invented.
-export const dashboardEndpoints = { products: null, orders: null };
+// Products use Laravel pagination through the DataTables server-side protocol.
+export const dashboardEndpoints = { products: '/admin/products/data', orders: null };
 export { fixture };
 
 // A single, already bounded fixture page. Never slice a full collection here.

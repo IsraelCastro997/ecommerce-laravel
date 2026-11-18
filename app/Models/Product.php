@@ -16,8 +16,9 @@ class Product extends Model
         'sku',
         'slug',
         'name',
-        'description',
+        'image_url', 'description', 'short_description', 'long_description',
         'origin_country',
+        'brand_id', 'primary_category_id', 'status', 'available_from', 'available_until',
     ];
 
     protected function casts(): array

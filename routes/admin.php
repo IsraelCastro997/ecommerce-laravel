@@ -19,6 +19,11 @@ Route::middleware(['auth', 'can:access-admin'])
         Route::livewire('/', Dashboard::class)
             ->name('dashboard');
 
+        Route::get('/products/data', [\App\Http\Controllers\Admin\ProductController::class, 'index'])->name('products.data');
+        Route::post('/products', [\App\Http\Controllers\Admin\ProductController::class, 'store'])->name('products.store');
+        Route::patch('/products/{product}/status', [\App\Http\Controllers\Admin\ProductController::class, 'status'])->name('products.status');
+        Route::put('/products/{product}', [\App\Http\Controllers\Admin\ProductController::class, 'update'])->name('products.update');
+        Route::delete('/products/{product}', [\App\Http\Controllers\Admin\ProductController::class, 'destroy'])->name('products.destroy');
         Route::livewire('/products', ProductManager::class)
             ->name('products.index');
 
