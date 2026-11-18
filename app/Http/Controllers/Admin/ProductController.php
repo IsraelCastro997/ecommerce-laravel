@@ -151,7 +151,7 @@ class ProductController extends Controller
    {
       return DB::transaction(function () use ($request, $product) {
          $data=$request->validated();
-         $values=collect($data)->except(['price_mxn','price_usd','stock'])->all();
+         $values=collect($data)->except(['price_mxn','price_usd','stock','historical_cost_mxn'])->all();
          $values['description']=$data['long_description'];
          if ($product) {
             $product=Product::whereKey($product->id)->lockForUpdate()->firstOrFail();
@@ -168,7 +168,7 @@ class ProductController extends Controller
             $id=DB::table('price_publications')->insertGetId(['market_id'=>$market->id,'status'=>'published','is_active'=>true,'published_at'=>now(),'created_at'=>now(),'updated_at'=>now()]);
             $publication=DB::table('price_publications')->where('id',$id)->first();
          }
-         DB::table('product_price_snapshots')->updateOrInsert(['product_id'=>$product->id,'price_publication_id'=>$publication->id],['price_mxn'=>$data['price_mxn'],'price_usd'=>$data['price_usd'],'calculated_at'=>now()]);
+         DB::table('product_price_snapshots')->updateOrInsert(['product_id'=>$product->id,'price_publication_id'=>$publication->id],['price_mxn'=>$data['price_mxn'],'price_usd'=>$data['price_usd'],'historical_cost_mxn'=>$data['historical_cost_mxn'],'calculated_at'=>now()]);
 
          $balances=DB::table('inventory_balances')->where('product_id',$product->id)->orderBy('id')->lockForUpdate()->get();
          $reserved=(int)$balances->sum('qty_reserved');

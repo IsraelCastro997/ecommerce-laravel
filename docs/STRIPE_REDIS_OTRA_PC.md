@@ -19,9 +19,12 @@ Conservar `APP_KEY` si se traslada la misma instalación y sus datos cifrados. E
 
 ```powershell
 php artisan migrate
+php artisan orders:backfill-history
 php artisan config:clear
 npm run build
 ```
+
+`orders:backfill-history` completa solamente datos históricos faltantes usando referencias del pedido. Puede revisarse primero con `--dry-run`; no crea compras demo ni sobrescribe costos conocidos.
 
 Usar un solo origen durante la prueba: por ejemplo `http://127.0.0.1:8000`, con ese mismo `APP_URL`. `localhost`, `127.0.0.1` y `tienda.test` son orígenes diferentes; Google OAuth debe autorizar el origen elegido. `.env` y las claves privadas se trasladan por un medio privado, no mediante commits.
 

@@ -32,6 +32,7 @@ class SaveProductRequest extends FormRequest
             'long_description' => ['required','string','max:20000'],
             'price_mxn' => ['required','numeric','gt:0','max:999999.99','decimal:0,2'],
             'price_usd' => ['required','numeric','gt:0','max:999999.99','decimal:0,2'],
+            'historical_cost_mxn' => ['required','numeric','min:0','max:999999.9999','decimal:0,4'],
             'stock' => ['required','integer','min:0','max:4294967295'],
             'image_url' => ['required','url:http,https','max:2048'],
             'description' => ['nullable','string','max:20000'],

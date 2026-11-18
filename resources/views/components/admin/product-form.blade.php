@@ -29,7 +29,9 @@
 @foreach(['price_usd'=>'Precio USD','price_mxn'=>'Precio MXN','stock'=>'Stock total'] as $field=>$label)
 <label>{{ $label }}<input required type="number" name="{{ $field }}" min="{{ $field === 'stock' ? 0 : '0.01' }}" max="{{ $field === 'stock' ? 4294967295 : '999999.99' }}" step="{{ $field === 'stock' ? 1 : '0.01' }}" value="{{ old($field,$field === 'stock' ? $currentStock : $currentPrice?->{$field}) }}"><span class="ro-error" role="alert" x-show="errors['{{ $field }}']?.length" x-text="errors['{{ $field }}']?.join(' ')" x-cloak></span></label>
 @endforeach
-</div><p class="ro-footnote">El stock total incluye las unidades reservadas. No puede reducirse por debajo de ellas.</p></section>
+</div><label>Costo unitario histórico MXN<input type="number" name="historical_cost_mxn" required min="0" max="999999.9999" step="0.0001" value="{{ old('historical_cost_mxn',$currentPrice?->historical_cost_mxn) }}"><span class="ro-error" role="alert" x-show="errors.historical_cost_mxn?.length" x-text="errors.historical_cost_mxn?.join(' ')" x-cloak></span></label>
+<p class="ro-footnote">El costo se conserva en el detalle de cada pedido para calcular la ganancia sin depender de cambios futuros del catálogo.</p>
+<p class="ro-footnote">El stock total incluye las unidades reservadas. No puede reducirse por debajo de ellas.</p></section>
 <label>URL de imagen<input required type="url" pattern="https?://.*" name="image_url" maxlength="2048" value="{{ old('image_url',$product ? ($product->image_url ?: sprintf('https://picsum.photos/seed/product-%d/640/640',$product->id)) : '') }}" placeholder="https://ejemplo.com/producto.jpg"><span class="ro-error" role="alert" x-show="errors.image_url?.length" x-text="errors.image_url?.join(' ')" x-cloak></span></label>
 <div class="blade-actions"><button class="store-button primary" type="submit" :disabled="saving" x-text="saving ? 'Guardando…' : 'Guardar producto'">Guardar producto</button><a class="store-button" href="{{ route('admin.products.index') }}">Volver al catálogo</a></div>
 </form></section>

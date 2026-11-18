@@ -189,6 +189,9 @@ class CheckoutController extends Controller
                     'unit_price' => $this->decimal($line['unit']),
                     'price_mxn' => $line['price']->price_mxn,
                     'price_usd' => $line['price']->price_usd,
+                    'allocated_cost_mxn' => $line['price']->historical_cost_mxn !== null
+                        ? bcmul((string)$line['price']->historical_cost_mxn, (string)$line['item']['quantity'], 4)
+                        : null,
                     'tax_total' => $this->decimal($lineTax),
                     'discount_total' => '0.00',
                     'line_total' => $this->decimal(
