@@ -170,7 +170,7 @@ Las siguientes cuentas existen en la base local de la entrega. Son **exclusivame
 | Administrador | admin.demo@refugio.test | `Refugio!c4c1e326212da1ac?` | Tienda, cuenta y `/admin` |
 | Cliente | cliente.demo@refugio.test | `Refugio!c1003b2db83b0429?` | Tienda, cuenta y checkout; sin acceso administrativo |
 
-Login compartido: **http://localhost:8000/login**. Registro pÃºblico: **http://localhost:8000/register**. No se necesita ser administrador para registrarse o comprar.
+Login de clientes: **http://localhost:8000/login**. Acceso administrativo exclusivo: **http://localhost:8000/admin/login**, sin registro público y con comprobación del permiso `access-admin` antes de crear la sesión. Registro pÃºblico: **http://localhost:8000/register**. No se necesita ser administrador para registrarse o comprar.
 
 ### Recrear las cuentas en una base nueva
 
