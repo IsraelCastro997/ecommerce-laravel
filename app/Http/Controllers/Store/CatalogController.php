@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Store;
 
+use App\Http\Controllers\Controller;
 use App\Http\Requests\Store\CatalogIndexRequest;
 use App\Http\Requests\Store\CatalogLookupRequest;
 use App\Models\Product;

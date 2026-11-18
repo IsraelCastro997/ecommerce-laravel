@@ -1,4 +1,4 @@
-import { filterCatalog, externalProductImage } from './catalog-presentation.js';
+import { externalProductImage } from './catalog-presentation.js';
 import './dashboard-ui.js';
 import './google-sign-in.js';
 import { estimate, checkoutItems } from './checkout-presentation.js';
@@ -15,6 +15,7 @@ import '../css/checkout-result.css';
 // Debe existir una ruta Laravel GET que responda: { "data": [productos] }.
 // La respuesta debe cumplir el contrato de catalog-presentation.js y checkout-presentation.js.
 const PRODUCTS_ENDPOINT = '/storefront/products';
+const FILTERS_ENDPOINT = '/storefront/filters';
 const CART_KEY = 'refugio:demo-cart:v1';
 
 function read(key, fallback) {
@@ -47,7 +48,7 @@ function normalizeProduct(product) {
    estimate([product], {}, 'MXN');
    estimate([product], {}, 'USD');
 
-   return { ...product, id: String(product.product_id) };
+   return { ...product, id: String(product.product_id), image_url: product.image_url || product.image || '', brand: product.brand || '', category: product.category || '' };
 }
 
 function restoreQuantities() {
@@ -68,6 +69,8 @@ function restoreQuantities() {
 // Livewire proporciona Alpine; no llamar Alpine.start() aquí.
 document.addEventListener('alpine:init', () => {
    const Alpine = window.Alpine;
+   let catalogController;
+   let catalogRequest = 0;
 
    Alpine.data('themePicker', () => ({
       theme: 'light',
@@ -109,10 +112,12 @@ document.addEventListener('alpine:init', () => {
       error: '',
       currentPage: 1,
       lastPage: 1,
+      totalProducts: 0, categories: [], brands: [], filters: {}, filtersError: '',
 
       init() {
          // Alpine ejecuta init() al registrar el store.
          void this.loadProducts();
+         void this.loadFilters();
       },
 
       query: '',
@@ -121,49 +126,53 @@ document.addEventListener('alpine:init', () => {
          return this.loadProducts(1);
       },
 
+      async loadFilters() {
+         try {
+            const response = await fetch(FILTERS_ENDPOINT, { headers: { Accept: 'application/json' } });
+            if (!response.ok) throw new Error('No se pudieron cargar marcas y categorías.');
+            const data = await response.json();
+            this.categories = Array.isArray(data.categories) ? data.categories : [];
+            this.brands = Array.isArray(data.brands) ? data.brands : [];
+            this.filtersError = '';
+         } catch (error) { this.filtersError = error.message; }
+      },
+
       async loadProducts(page = 1) {
+         catalogController?.abort();
+         catalogController = new window.AbortController();
+         const requestId = ++catalogRequest;
          this.loading = true;
          this.error = '';
-
          try {
             const url = new URL(PRODUCTS_ENDPOINT, window.location.origin);
             url.searchParams.set('page', String(page));
+            url.searchParams.set('currency', this.currency);
             if (this.query) url.searchParams.set('q', this.query);
-
+            for (const [key, value] of Object.entries(this.filters)) {
+               if (value !== '' && value !== false && value != null) url.searchParams.set(key, String(value));
+            }
             const response = await fetch(url, {
-               method: 'GET',
-               credentials: 'same-origin',
-               headers: { Accept: 'application/json' },
+               credentials: 'same-origin', headers: { Accept: 'application/json' }, signal: catalogController.signal,
             });
-
             if (!response.ok) {
-               throw new Error(`No se pudo consultar el catálogo de Laravel (HTTP ${response.status}).`);
+               const details = await response.json().catch(() => ({}));
+               throw new Error(Object.values(details.errors ?? {}).flat().join(' ') || `No se pudo cargar el catálogo (HTTP ${response.status}).`);
             }
-
             const payload = await response.json();
-            if (!payload || !Array.isArray(payload.data)) {
-               throw new Error('Laravel debe responder JSON con un arreglo en la propiedad data.');
-            }
-            if (payload.data.length > 100) {
-               throw new Error('El backend devolvió más de 100 productos en una página.');
-            }
-
+            if (!Array.isArray(payload.data) || payload.data.length > 100) throw new Error('El servidor debe devolver una página de productos en data.');
             const products = payload.data.map(normalizeProduct);
+            if (requestId !== catalogRequest) return;
             this.products = products;
-
-            // La paginación solo se muestra si el backend entrega metadatos.
-            this.currentPage = Number.isSafeInteger(payload.current_page)
-               ? payload.current_page
-               : 1;
-            this.lastPage = Number.isSafeInteger(payload.last_page)
-               ? payload.last_page
-               : 1;
+            this.currentPage = Number(payload.current_page) || 1;
+            this.lastPage = Number(payload.last_page) || 1;
+            this.totalProducts = Number(payload.total ?? products.length);
          } catch (error) {
-            this.error = error instanceof Error ? error.message : 'No se pudo cargar el catálogo.';
+            if (error.name === 'AbortError' || requestId !== catalogRequest) return;
+            this.error = error.message || 'No se pudo cargar el catálogo.';
             this.products = [];
-            console.error('Error al consultar el catálogo:', error);
+            this.totalProducts = 0;
          } finally {
-            this.loading = false;
+            if (requestId === catalogRequest) this.loading = false;
          }
       },
 
@@ -353,6 +362,8 @@ document.addEventListener('alpine:init', () => {
    Alpine.data('catalog', (options = {}) => ({
       query: '',
       category: '',
+      categoryMenuOpen: false,
+      categoryQuery: '',
       brand: '',
       stock: false,
       maximum: '',
@@ -363,24 +374,61 @@ document.addEventListener('alpine:init', () => {
       imageErrors: {},
 
       get categories() {
-         return [...new Set(Alpine.store('shop').products.map(p => p.category).filter(Boolean))];
+         return [...Alpine.store('shop').categories].sort((a, b) => a.name.localeCompare(b.name, 'es', { numeric: true, sensitivity: 'base' }));
       },
-      get brands() {
-         return [...new Set(Alpine.store('shop').products.map(p => p.brand).filter(Boolean))];
+      get selectedCategoryName() {
+         return this.categories.find(item => item.slug === this.category)?.name || 'Todas las categorías';
       },
+      get filteredCategories() {
+         const normalize = value => String(value).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('es');
+         const query = normalize(this.categoryQuery.trim());
+         return this.categories.filter(item => normalize(item.name).includes(query));
+      },
+      toggleCategoryMenu() {
+         this.categoryMenuOpen = !this.categoryMenuOpen;
+         if (this.categoryMenuOpen) {
+            this.categoryQuery = '';
+            this.$nextTick(() => this.$refs.categorySearch.focus());
+         }
+      },
+      closeCategoryMenu() {
+         if (!this.categoryMenuOpen) return;
+         this.categoryMenuOpen = false;
+         this.$refs.categoryTrigger.focus();
+      },
+      chooseCategory(slug) {
+         this.category = slug;
+         this.closeCategoryMenu();
+      },
+      get brands() { return Alpine.store('shop').brands; },
       init() {
          const group = new URLSearchParams(location.search).get('categoria');
-         if (this.categories.includes(group)) this.category = group;
-         this.$watch('$store.shop.currency', () => { this.maximum = ''; });
+         if (group) {
+            const applyCategory = () => {
+               const category = this.categories.find(item => item.slug === group || item.name === group);
+               if (category) this.category = category.slug;
+            };
+            applyCategory();
+            this.$watch('$store.shop.categories', applyCategory);
+         }
+         for (const key of ['category', 'brand', 'stock', 'sort']) this.$watch(key, () => this.applyFilters());
+         this.$watch('$store.shop.currency', () => { this.maximum = ''; this.applyFilters(); });
       },
-      get visible() {
-         return filterCatalog(Alpine.store('shop').products, this, Alpine.store('shop').currency);
+      applyFilters() {
+         const shop = Alpine.store('shop');
+         shop.query = this.query.trim();
+         shop.filters = {
+            category: this.category, brand: this.brand, stock: this.stock ? '1' : '',
+            max_price: this.maximum, sort: ({ asc: 'price_asc', desc: 'price_desc' })[this.sort] || 'newest',
+         };
+         void shop.loadProducts(1);
       },
+      get visible() { return Alpine.store('shop').products; },
       get activeFilters() {
          return [
             this.query && { key: 'query', label: 'Búsqueda: ' + this.query },
-            this.category && { key: 'category', label: this.category },
-            this.brand && { key: 'brand', label: this.brand },
+            this.category && { key: 'category', label: this.categories.find(item => item.slug === this.category)?.name || this.category },
+            this.brand && { key: 'brand', label: this.brands.find(item => item.slug === this.brand)?.name || this.brand },
             this.stock && { key: 'stock', label: 'Disponibles' },
             this.maximum !== '' && {
                key: 'maximum',
@@ -404,7 +452,7 @@ document.addEventListener('alpine:init', () => {
       },
       removeFilter(key) {
          this[key] = key === 'stock' ? false : '';
-         if (key === 'query') void Alpine.store('shop').searchProducts('');
+         if (key === 'query' || key === 'maximum') this.applyFilters();
       },
       reset() {
          this.query = '';
@@ -413,7 +461,7 @@ document.addEventListener('alpine:init', () => {
          this.stock = false;
          this.maximum = '';
          this.sort = '';
-         void Alpine.store('shop').searchProducts('');
+         this.applyFilters();
       },
    }));
 

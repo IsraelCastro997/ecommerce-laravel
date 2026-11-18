@@ -1,18 +1,21 @@
 <?php
 
+
 use App\Http\Controllers\Checkout\CheckoutController;
+use App\Http\Controllers\Store\CatalogController;
 use App\Livewire\Store\Catalog;
 use App\Livewire\Store\Checkout;
 use App\Livewire\Store\OrderConfirmation;
 use App\Livewire\Store\ProductDetail;
 use App\Livewire\Store\ShoppingCart;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Store\CatalogController;
+
 
 
     //Fetch store Products
     Route::prefix('storefront')->name('products.')->group(function (): void {
-        Route::get('/products',[CatalogController::class,'filters'])->name('filters');
+        Route::get('/products', [CatalogController::class, 'index'])->name('index');
+        Route::get('/filters', [CatalogController::class, 'filters'])->name('filters');
 
         Route::post('/products/loockup',[CatalogController::class,'lookup'])->name('lockup');
         Route::get('products/{product:slug}',[

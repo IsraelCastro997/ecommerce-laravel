@@ -12,7 +12,7 @@ class CatalogIndexRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -23,7 +23,15 @@ class CatalogIndexRequest extends FormRequest
     public function rules(): array
     {
         return [
-            //
+            'page' => ['sometimes', 'integer', 'min:1'],
+            'per_page' => ['sometimes', 'integer', 'min:1', 'max:100'],
+            'q' => ['nullable', 'string', 'max:255'],
+            'category' => ['nullable', 'string', 'max:180'],
+            'brand' => ['nullable', 'string', 'max:150'],
+            'currency' => ['sometimes', 'in:MXN,USD'],
+            'stock' => ['sometimes', 'boolean'],
+            'max_price' => ['nullable', 'numeric', 'min:0'],
+            'sort' => ['sometimes', 'in:newest,name,price_asc,price_desc'],
         ];
     }
 }

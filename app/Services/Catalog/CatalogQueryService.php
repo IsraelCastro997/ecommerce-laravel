@@ -5,80 +5,101 @@ namespace App\Services\Catalog;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\ProductPriceSnapshot;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
+use LogicException;
 
 class CatalogQueryService
 {
-    private function query(): Builder
+    /**
+     * Restringe los precios a publicaciones activas
+     * del mercado mexicano.
+     */
+    private function publishedPrices(Builder $query): Builder
     {
-        $stock = DB::table('inventory_balances')
-            ->select('product_id')
-            ->selectRaw(
-                'SUM(GREATEST(qty_on_hand - qty_reserved, 0)) AS available_quantity'
-            )
-            ->groupBy('product_id');
-
-        return Product::query()
-            ->select([
-                'products.*',
-                'brands.name as brand_name',
-                'categories.name as category_name',
-                'snapshots.price_mxn as published_price_mxn',
-                'snapshots.price_usd as published_price_usd',
-            ])
-            ->selectRaw(
-                'COALESCE(stock.available_quantity, 0) as available_quantity'
-            )
-            ->leftJoin(
-                'brands',
-                'brands.id',
-                '=',
-                'products.brand_id'
-            )
-            ->leftJoin(
-                'categories',
-                'categories.id',
-                '=',
-                'products.primary_category_id'
-            )
-            ->join(
-                'product_price_snapshots as snapshots',
-                'snapshots.product_id',
-                '=',
-                'products.id'
-            )
-            ->join(
-                'price_publications as publications',
-                'publications.id',
-                '=',
-                'snapshots.price_publication_id'
-            )
-            ->join(
-                'markets',
-                'markets.id',
-                '=',
-                'publications.market_id'
-            )
-            ->leftJoinSub(
-                $stock,
-                'stock',
-                fn ($join) => $join->on(
-                    'stock.product_id',
-                    '=',
-                    'products.id'
+        return $query->whereHas(
+            'pricePublication',
+            fn (Builder $publication) => $publication
+                ->where('is_active', true)
+                ->where('status', 'published')
+                ->whereHas(
+                    'market',
+                    fn (Builder $market) => $market
+                        ->where('code', 'MX')
                 )
-            )
-            ->with('images')
-            ->where('products.status', 'active')
-            ->where('publications.is_active', true)
-            ->where('publications.status', 'published')
-            ->where('markets.code', 'MX');
+        );
     }
 
+    /**
+     * Productos visibles para el catálogo.
+     */
+    private function visibleProducts(Builder $query): Builder
+    {
+        return $query
+            ->where('status', 'active')
+            ->whereHas(
+                'priceSnapshots',
+                fn (Builder $snapshot) =>
+                    $this->publishedPrices($snapshot)
+            );
+    }
+
+    /**
+     * Consulta base con relaciones precargadas.
+     */
+    private function query(): Builder
+    {
+        return $this->visibleProducts(
+            Product::query()
+                ->with([
+                    'brand:id,name,slug',
+                    'primaryCategory:id,name,slug',
+
+                    'priceSnapshots' => function (
+                        HasMany $relation
+                    ): void {
+                        $this->publishedPrices($relation->getQuery())
+                            ->with('pricePublication');
+                    },
+                ])
+                ->withSum(
+                    'inventoryBalances as stock_on_hand',
+                    'qty_on_hand'
+                )
+                ->withSum(
+                    'inventoryBalances as stock_reserved',
+                    'qty_reserved'
+                )
+        );
+    }
+
+    /**
+     * Subconsulta para ordenar por precio publicado.
+     */
+    private function priceOrderQuery(string $currency): Builder
+    {
+        $column = $currency === 'USD'
+            ? 'price_usd'
+            : 'price_mxn';
+
+        return $this->publishedPrices(
+            ProductPriceSnapshot::query()
+                ->select($column)
+                ->whereColumn(
+                    'product_id',
+                    'products.id'
+                )
+        )
+            ->orderByDesc('price_publication_id')
+            ->limit(1);
+    }
+
+    /**
+     * Busca productos con filtros y paginación.
+     */
     public function search(array $filters): LengthAwarePaginator
     {
         $query = $this->query();
@@ -86,31 +107,29 @@ class CatalogQueryService
         $term = trim((string) ($filters['q'] ?? ''));
 
         if ($term !== '') {
-            $query->where(function (Builder $builder) use ($term) {
-                $builder
-                    ->where('products.name', 'like', '%' . $term . '%')
-                    ->orWhere('products.sku', 'like', '%' . $term . '%')
-                    ->orWhere('products.description', 'like', '%' . $term . '%');
+            $query->where(function (Builder $q) use ($term) {
+                $q->where('name', 'like', "%{$term}%")
+                    ->orWhere('sku', 'like', "%{$term}%")
+                    ->orWhere('description', 'like', "%{$term}%");
             });
         }
 
         if (!empty($filters['category'])) {
             $slug = $filters['category'];
 
-            $query->where(function (Builder $builder) use ($slug) {
-                $builder
-                    ->whereHas(
-                        'primaryCategory',
-                        fn (Builder $category) => $category
-                            ->where('slug', $slug)
-                            ->where('active', true)
-                    )
-                    ->orWhereHas(
-                        'categories',
-                        fn (Builder $category) => $category
-                            ->where('slug', $slug)
-                            ->where('active', true)
-                    );
+            $query->where(function (Builder $q) use ($slug) {
+                $q->whereHas(
+                    'primaryCategory',
+                    fn (Builder $category) => $category
+                        ->where('slug', $slug)
+                        ->where('active', true)
+                )
+                ->orWhereHas(
+                    'categories',
+                    fn (Builder $category) => $category
+                        ->where('slug', $slug)
+                        ->where('active', true)
+                );
             });
         }
 
@@ -123,102 +142,113 @@ class CatalogQueryService
         }
 
         if (!empty($filters['stock'])) {
-            $query->where(
-                'stock.available_quantity',
-                '>',
-                0
+            $query->whereHas(
+                'inventoryBalances',
+                fn (Builder $balance) => $balance
+                    ->whereColumn(
+                        'qty_on_hand',
+                        '>',
+                        'qty_reserved'
+                    )
             );
         }
 
-        $currency = $filters['currency'] ?? 'MXN';
+        $currency = ($filters['currency'] ?? 'MXN') === 'USD'
+            ? 'USD'
+            : 'MXN';
 
         $priceColumn = $currency === 'USD'
-            ? 'snapshots.price_usd'
-            : 'snapshots.price_mxn';
+            ? 'price_usd'
+            : 'price_mxn';
 
         if (
             isset($filters['max_price'])
             && $filters['max_price'] !== ''
         ) {
-            $query->where(
-                $priceColumn,
-                '<=',
-                $filters['max_price']
+            $query->whereHas(
+                'priceSnapshots',
+                fn (Builder $snapshot) =>
+                    $this->publishedPrices($snapshot)
+                        ->where(
+                            $priceColumn,
+                            '<=',
+                            $filters['max_price']
+                        )
             );
         }
 
         switch ($filters['sort'] ?? 'newest') {
             case 'name':
-                $query->orderBy('products.name');
+                $query->orderBy('name');
                 break;
 
             case 'price_asc':
-                $query->orderBy($priceColumn);
+                $query->orderBy(
+                    $this->priceOrderQuery($currency),
+                    'asc'
+                );
                 break;
 
             case 'price_desc':
-                $query->orderByDesc($priceColumn);
+                $query->orderBy(
+                    $this->priceOrderQuery($currency),
+                    'desc'
+                );
                 break;
 
             default:
-                $query->orderByDesc('products.id');
+                $query->orderByDesc('id');
                 break;
         }
 
-        $query->orderBy('products.id');
+        if (($filters['sort'] ?? 'newest') !== 'newest') {
+            $query->orderBy('id');
+        }
 
         return $query->paginate(
-            min(100, (int) ($filters['per_page'] ?? 24))
+            min(100, max(1, (int) ($filters['per_page'] ?? 24)))
         );
     }
 
+    /**
+     * Recupera un producto público por ID.
+     */
     public function findPublicProduct(int $id): ?Product
     {
         return $this->query()
-            ->where('products.id', $id)
+            ->whereKey($id)
             ->first();
     }
 
+    /**
+     * Recupera productos públicos por sus IDs.
+     */
     public function findByIds(array $ids): Collection
     {
         return $this->query()
-            ->whereIn('products.id', $ids)
+            ->whereKey($ids)
             ->get();
     }
 
+    /**
+     * Categorías y marcas con productos visibles.
+     */
     public function filters(): array
     {
-        $visibleProducts = function (Builder $query): void {
-            $query
-                ->where('status', 'active')
-                ->whereHas('priceSnapshots', function (Builder $snapshot) {
-                    $snapshot->whereHas(
-                        'pricePublication',
-                        function (Builder $publication) {
-                            $publication
-                                ->where('is_active', true)
-                                ->where('status', 'published')
-                                ->whereHas(
-                                    'market',
-                                    fn (Builder $market) => $market
-                                        ->where('code', 'MX')
-                                );
-                        }
-                    );
-                });
-        };
+        $visible = fn (Builder $query) =>
+            $this->visibleProducts($query);
 
         $brands = Brand::query()
-            ->whereHas('products', $visibleProducts)
+            ->whereHas('products', $visible)
             ->orderBy('name')
             ->get(['id', 'name', 'slug']);
 
         $categories = Category::query()
             ->where('active', true)
-            ->where(function (Builder $query) use ($visibleProducts) {
+            ->where(function (Builder $query) use ($visible) {
                 $query
-                    ->whereHas('primaryProducts', $visibleProducts)
-                    ->orWhereHas('products', $visibleProducts);
+                    ->whereHas('primaryProducts', $visible)
+                    ->orWhereHas('products', $visible);
             })
             ->orderBy('name')
             ->get(['id', 'name', 'slug']);
@@ -230,17 +260,29 @@ class CatalogQueryService
         ];
     }
 
+    /**
+     * Transforma el producto al formato de Alpine.
+     */
     public function toDto(Product $product): array
     {
-        $image = $product->images
-            ->firstWhere('is_primary', true)
-            ?? $product->images->first();
+        $snapshots = $product->priceSnapshots;
 
-        $imageUrl = $image === null
-            ? null
-            : Storage::disk($image->disk)->url($image->path);
+        if ($snapshots->count() !== 1) {
+            throw new LogicException(
+                'El producto ' . $product->id .
+                ' no tiene exactamente un precio publicado vigente.'
+            );
+        }
 
-        $availableQuantity = (int) $product->available_quantity;
+        $snapshot = $snapshots->first();
+
+        $onHand = (int) ($product->stock_on_hand ?? 0);
+        $reserved = (int) ($product->stock_reserved ?? 0);
+
+        $availableQuantity = max(
+            0,
+            $onHand - $reserved
+        );
 
         return [
             'product_id' => (int) $product->id,
@@ -249,16 +291,23 @@ class CatalogQueryService
             'slug' => $product->slug,
             'name' => $product->name,
             'detail' => $product->description ?? '',
-            'category' => $product->category_name,
-            'brand' => $product->brand_name,
+
+            'category' => $product->primaryCategory?->name,
+            'brand' => $product->brand?->name,
             'origin' => $product->origin_country,
+
             'available' => $availableQuantity > 0,
             'available_quantity' => $availableQuantity,
+
             'prices' => [
-                'MXN' => (float) $product->published_price_mxn,
-                'USD' => (float) $product->published_price_usd,
+                'MXN' => (float) $snapshot->price_mxn,
+                'USD' => (float) $snapshot->price_usd,
             ],
-            'image' => $imageUrl,
+
+            'image' => sprintf(
+                'https://picsum.photos/seed/product-%d/640/640',
+                $product->id
+            ),
         ];
     }
 }
