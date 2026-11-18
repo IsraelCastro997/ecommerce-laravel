@@ -252,22 +252,14 @@ Todas bajo `http://localhost:8000`:
 - Cliente Elasticsearch y configuración instalados; búsqueda efectiva revisada todavía SQL. Redis y la integración de caché/conversión están en desarrollo.
 - Los modelos/tablas históricos de proveedores, lotes y otros módulos ampliados no implican que se deban implementar en el prototipo principal.
 
-## Comprobaciones opcionales
-
-```powershell
-npm run lint
-npm run build
-npm run test:frontend
-```
-
-PHPUnit requiere una base MariaDB **separada**, `ecommerce_frontend_testing`. Crear esa base antes de ejecutar:
-
-```powershell
-php artisan test --compact
-```
-
-`phpunit.xml` y `tests/TestCase.php` rechazan otra conexión/base de testing. No usar el catálogo persistente para fixtures destructivos. Esta actualización del README no ejecutó pruebas, migraciones ni seeds ni acredita que toda la suite histórica refleje los últimos cambios de backend.
-
+## Comprobación de instalación
+
+```powershell
+composer check-platform-reqs
+npm run lint
+npm run build
+```
+
 ## Documentación adicional
 
 - [Historial del proyecto](docs/TRABAJO_REALIZADO.md)

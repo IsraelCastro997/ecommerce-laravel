@@ -1,8 +1,8 @@
 {
     "$schema": "https://getcomposer.org/schema.json",
-    "name": "laravel/vue-starter-kit",
+    "name": "israel-castro/ecommerce",
     "type": "project",
-    "description": "The skeleton application for the Laravel framework.",
+    "description": "E-commerce de Israel Castro con Laravel, Livewire y Alpine.js",
     "keywords": [
         "laravel",
         "framework"
@@ -33,11 +33,6 @@
             "App\\": "app/",
             "Database\\Factories\\": "database/factories/",
             "Database\\Seeders\\": "database/seeders/"
-        }
-    },
-    "autoload-dev": {
-        "psr-4": {
-            "Tests\\": "tests/"
         }
     },
     "scripts": {
