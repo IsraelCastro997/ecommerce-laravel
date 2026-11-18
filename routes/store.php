@@ -9,6 +9,19 @@ use App\Livewire\Store\ShoppingCart;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Store\CatalogController;
 
+
+    //Fetch store Products
+    Route::prefix('storefront')->name('products.')->group(function (): void {
+        Route::get('/products',[CatalogController::class,'filters'])->name('filters');
+
+        Route::post('/products/loockup',[CatalogController::class,'lookup'])->name('lockup');
+        Route::get('products/{product:slug}',[
+            CatalogController::class,'show'
+        ])->name('show');
+
+    });
+
+
 Route::name('store.')->group(function () {
     Route::livewire('/catalogo', Catalog::class)
         ->name('catalog');
@@ -18,10 +31,6 @@ Route::name('store.')->group(function () {
 
     Route::livewire('/carrito', ShoppingCart::class)
         ->name('cart');
-
-
-    //Fetch store Products
-    Route::get('/storefront/products', [CatalogController::class,'index'])->name('products.data');
 
 
     Route::middleware('auth')->group(function () {

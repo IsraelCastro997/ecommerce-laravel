@@ -9,6 +9,7 @@ use App\Livewire\Admin\Orders\OrderManager;
 use App\Livewire\Admin\Reports\SalesReport;
 use App\Livewire\Admin\Reports\TopProductsReport;
 use App\Livewire\Admin\Currency\ExchangeRateManager;
+use App\Http\Controllers\Admin\DashboardController;
 
 Route::middleware(['auth', 'can:access-admin'])
     ->prefix('admin')
@@ -63,4 +64,8 @@ Route::middleware(['auth', 'can:access-admin'])
         Route::livewire('/settings', \App\Livewire\Admin\Settings\StoreSettings::class)->name('settings.index');
         Route::livewire('/suppliers', \App\Livewire\Admin\Suppliers\SupplierManager::class)->name('suppliers.index');
         Route::livewire('/suppliers/{supplier}', \App\Livewire\Admin\Suppliers\SupplierDetail::class)->name('suppliers.show');
-    });
+    
+        Route::get('/dashboard/summary',[DashboardController::class,'summary'])->name('dashboard.summary');
+        Route::get('/dashboard/sales',[DashboardController::class,'sales'])->name('dashboard.sales');
+        Route::get('/dashboard/top-products',[DashboardController::class])->name('dashboard.top-products');
+        });
