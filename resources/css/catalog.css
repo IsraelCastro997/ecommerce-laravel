@@ -8,7 +8,7 @@
 .catalog-intro h1 { font-family: 'Bricolage Grotesque', sans-serif; font-size: clamp(2.2rem,4vw,3.7rem); font-weight: 600; line-height: 1.03; letter-spacing: -.045em; margin: 1rem 0; color: #193d2d; }
 .catalog-intro-copy > p { font-size: .93rem; line-height: 1.75; max-width: 25rem; color: #4e6055; }
 .catalog-intro-link { display: inline-flex; align-items: center; gap: 1.4rem; margin-top: 1.2rem; border-bottom: 1px solid #80937d; padding-bottom: .4rem; font-size: .84rem; font-weight: 700; color: #193d2d; }
-.catalog-intro-image { position: relative; background: #3e5540 url('/store/camp.png') 70% center/cover; min-height: 300px; }
+.catalog-intro-image { position: relative; background: #3e5540; min-height: 300px; }
 .catalog-intro-image span { position: absolute; right: 1.3rem; bottom: 1.1rem; color: white; font-size: .82rem; text-shadow: 0 1px 4px #102218; }
 .catalog-shop { padding-block: 3rem 1rem; }
 .catalog-section-heading { display: flex; align-items: flex-end; justify-content: space-between; gap: 1.5rem; margin-bottom: 1.7rem; }
@@ -188,7 +188,7 @@
 .catalog-shop .catalog-product-image { aspect-ratio: 1.04; }
 @media(min-width:701px) and (max-width:900px) { .main-links { display: flex; } }
 
-/* The source fixture contains 768×512 product photographs: keep that native ratio. */
+/* Keep product layouts stable while external images load. */
 .catalog-shop .catalog-product-image,.catalog-shop .product-photo,.catalog-external-image { aspect-ratio: 1.5; }
 .catalog-quickview-image { align-self: center; background: transparent; }
 .catalog-shop .catalog-quickview-image .product-photo { height: auto; min-height: 0; aspect-ratio: 1.5; }

@@ -340,8 +340,7 @@
 .product-photo {
     min-height: 7rem;
     aspect-ratio: 1.45;
-    background: #eae4d8 url('/store/products.png') no-repeat;
-    background-size: 200% 200%;
+    background: #eae4d8;
 }
 .product-copy {
     padding: 0.8rem;

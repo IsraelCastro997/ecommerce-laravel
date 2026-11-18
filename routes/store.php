@@ -7,6 +7,7 @@ use App\Livewire\Store\OrderConfirmation;
 use App\Livewire\Store\ProductDetail;
 use App\Livewire\Store\ShoppingCart;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Store\CatalogController;
 
 Route::name('store.')->group(function () {
     Route::livewire('/catalogo', Catalog::class)
@@ -17,6 +18,11 @@ Route::name('store.')->group(function () {
 
     Route::livewire('/carrito', ShoppingCart::class)
         ->name('cart');
+
+
+    //Fetch store Products
+    Route::get('/storefront/products', [CatalogController::class,'index'])->name('products.data');
+
 
     Route::middleware('auth')->group(function () {
         Route::view('/checkout/success', 'checkout.success')

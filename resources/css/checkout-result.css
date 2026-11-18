@@ -1,6 +1,6 @@
 .checkout-result-page { padding-block: 1.5rem 4rem; }
 .checkout-result-card { display: grid; grid-template-columns: .9fr 1.1fr; overflow: hidden; background: var(--card); border: 1px solid var(--line); border-radius: 14px; min-height: 550px; }
-.checkout-result-landscape { position: relative; background: #29432f url('/store/camp.png') 68% center / cover; }
+.checkout-result-landscape { position: relative; background: #29432f; }
 .checkout-result-landscape > span { position: absolute; bottom: 1.5rem; left: 1.5rem; display: flex; align-items: center; gap: .7rem; color: white; font-size: .85rem; text-shadow: 0 1px 5px #13291d; }
 .checkout-result-content { padding: clamp(1.5rem,4vw,4rem); align-self: center; }
 .checkout-result-symbol { display: inline-grid; place-items: center; background: #eaf0e4; color: #35583c; width: 58px; height: 58px; border-radius: 50%; margin-bottom: 1.5rem; }
