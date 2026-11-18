@@ -1,1 +1,1 @@
-<div class="store-wrap blade-page"><x-admin.workspace title="Productos más vendidos" dataset="products" :report="true" /></div>
+<div class="store-wrap blade-page"><div class="blade-admin-workspace"><x-admin.navigation /><div class="min-w-0"><x-admin.analytics title="Los productos más elegidos" :ranking="true" /><x-admin.data-table kind="products" /></div></div></div>

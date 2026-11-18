@@ -1,4 +1,5 @@
 import { filterCatalog, externalProductImage } from './catalog-presentation.js';
+import './dashboard-ui.js';
 import { estimate, checkoutItems } from './checkout-presentation.js';
 import '../css/fonts.css';
 import '../css/app.css';

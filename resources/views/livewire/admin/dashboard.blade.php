@@ -1,1 +1,1 @@
-<div class="store-wrap blade-page"><x-admin.workspace title="Panel de administración" dataset="products" :report="true" /></div>
+<div class="store-wrap blade-page"><div class="blade-admin-workspace"><x-admin.navigation /><div class="min-w-0"><x-admin.analytics /><div class="ro-next"><div><h2>Tu catálogo, en orden</h2><p>Busca productos y revisa sus estados en la tabla de administración.</p></div><a class="ro-button" href="{{ route('admin.products.index') }}">Administrar productos</a></div></div></div></div>
