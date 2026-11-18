@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
+use App\Http\Controllers\Auth\GoogleAuthController;
 use App\Http\Controllers\Auth\ConfirmablePasswordController;
 use App\Http\Controllers\Auth\EmailVerificationNotificationController;
 use App\Http\Controllers\Auth\EmailVerificationPromptController;
@@ -11,6 +12,12 @@ use App\Http\Controllers\Auth\VerifyEmailController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('guest')->group(function () {
+    Route::get('auth/google/challenge', [GoogleAuthController::class, 'challenge'])
+        ->middleware('throttle:20,1')->name('auth.google.challenge');
+
+    Route::post('auth/google', [GoogleAuthController::class, 'store'])
+        ->middleware('throttle:10,1')->name('auth.google.store');
+
     Route::get('register', [RegisteredUserController::class, 'create'])
         ->name('register');
 
