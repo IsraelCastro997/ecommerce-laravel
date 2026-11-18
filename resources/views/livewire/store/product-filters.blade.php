@@ -1,3 +1,1 @@
-<div>
-    {{-- Well begun is half done. - Aristotle --}}
-</div>
+<div><section class="store-wrap"><x-catalog-preview /></section></div>

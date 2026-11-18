@@ -1,51 +1,38 @@
-# Inventario de Eloquent y esquema
+# Inventario de Eloquent y esquema actual
 
-La revisión se hizo sobre `database/migrations` y `app/Models`. Se generaron 34 modelos con `artisan make:model` y se completó su configuración Eloquent a partir del esquema local. `User` conserva el flujo de login del starter y sus atributos asignables `name`, `email` y `password`. Spatie conserva sus modelos `Role` y `Permission`. Cualquier ajuste en `User`, factories y pruebas backend queda a cargo del desarrollador.
+Revisión: 2026-11-17. Se inspeccionaron los archivos de modelos, migraciones y composer.lock; migrate:status informó las 21 migraciones registradas como aplicadas en la base local. Esto no sustituye una auditoría de integridad ni pruebas de todas las operaciones comerciales.
 
-| Dominio | Tablas encontradas | Relaciones y particularidades del esquema |
+Existen 39 modelos locales en app/Models. El alta inicial de 34 modelos convivía con el User del starter; después se incorporaron PricingPolicy, ProductImage, PurchaseOrder y PurchaseOrderItem. Cashier y Spatie también proporcionan modelos propios desde sus paquetes.
+
+| Dominio | Modelos locales / tablas | Estado y particularidades |
 |---|---|---|
-| Identidad | `users`, `customer_profiles`, `customer_addresses`, `social_accounts` | Perfil 1:1 mediante `user_id` como PK; direcciones e identidades 1:N. Identidad externa única por proveedor e ID. |
-| Roles | `roles`, `permissions`, `model_has_roles`, `model_has_permissions`, `role_has_permissions` | Reutilizar la configuración y los modelos de Spatie. El modelo `User` todavía carece de `HasRoles`. |
-| Catálogo | `products`, `brands`, `categories`, `product_categories` | SKU y slug únicos; marca y categoría principal opcionales; jerarquía de categorías; pivote compuesto producto-categoría sin timestamps. `products` tiene soft deletes e índices por estado, marca y categoría. |
-| Atributos | `product_attributes`, `product_attribute_values` | Pivote compuesto producto-atributo con valor adicional y un índice para filtrado. Evitar un modelo con PK escalar ficticia para el pivote. |
-| Proveedores | `suppliers`, `supplier_products` | Cotizaciones por pareja única proveedor-producto. El costo cotizado es `DECIMAL(18,4)`; contiene moneda de compra. |
-| Inventario | `warehouses`, `inventory_balances`, `inventory_lots`, `inventory_movements` | Balance único por producto-almacén; lotes y movimientos con FK reales. Los movimientos pueden referenciar un lote y un usuario. El lote registra `receipt_reference` de texto. |
-| Divisas | `currencies`, `exchange_rates`, `exchange_rate_sync_logs` | `currencies.code` es PK alfanumérica sin timestamps; tasas `DECIMAL(18,8)`; unicidad por fuente, serie y fecha. Los códigos de moneda son columnas de texto sin FK declarada. |
-| Precios | `markets`, `product_pricing`, `pricing_policy_versions`, `price_publications`, `product_price_snapshots`, `price_history` | Precio base único por producto y mercado. La versión de política tiene configuración JSON y carece de FK directa desde `product_pricing`. Publicaciones enlazan mercado y tasa, snapshots enlazan publicación y producto. `price_history` utiliza nombre de tabla explícito y puede referenciar al actor. |
-| Carrito | `carts`, `cart_items` | Usuario opcional, token de invitado único opcional, vencimiento y líneas únicas por carrito-producto. El esquema guarda cantidad y moneda; la cotización confirmada requiere contrato de servidor. |
-| Pedidos | `orders`, `order_items`, `stock_reservations`, `stock_allocations` | Folio e idempotencia únicos. Pedido enlaza usuario, publicación y tasa opcionales. Detalle congela nombre, SKU y precio. Reservas enlazan ítem, producto y almacén. Asignaciones enlazan ítem y lote. |
-| Pagos | `payment_transactions`, `stripe_events` | Las transacciones enlazan pedido. IDs externos Stripe únicos y opcionales según flujo. El evento tiene identificador externo único sin FK de pedido. |
-| Búsqueda | `search_synonyms`, `outbox_events`, `integration_sync_logs` | Sinónimos por locale; outbox con agregado lógico e índice de pendientes; histórico de integración por servicio y fecha. Modelo relacional para documentos Elasticsearch queda fuera del esquema vigente. |
+| Identidad | User, CustomerProfile, CustomerAddress, SocialAccount | User conserva la autenticación Laravel e incorpora Billable de Cashier. CustomerProfile utiliza user_id como PK. |
+| Roles | Modelos Role y Permission del paquete Spatie | Las tablas de permisos están migradas. User no incluye HasRoles en el archivo inspeccionado; no declarar la autorización administrativa completada. |
+| Catálogo | Product, Brand, Category, ProductAttribute, ProductAttributeValue | products contiene SKU/slug únicos, soft deletes, marca/categoría principal y fechas available_from/available_until. Atributos con pivote compuesto. |
+| Imágenes | ProductImage / product_images | Tabla y modelo existentes, relación Product.images ordenada por sort_order. La intención es usar URLs externas; el esquema actual tiene disk/path y no una columna url dedicada. |
+| Proveedores | Supplier, SupplierProduct | Cotizaciones por proveedor/producto, moneda y costos de escala 4. |
+| Compras | PurchaseOrder, PurchaseOrderItem | Tablas y relaciones existentes. El módulo funcional de compras está fuera del alcance actual por decisión del responsable. |
+| Inventario | Warehouse, InventoryBalance, InventoryLot, InventoryMovement | Balances por producto/almacén; qty_on_hand y qty_reserved. Lotes, costos y movimientos separados. |
+| Divisas | Currency, ExchangeRate, ExchangeRateSyncLog | Currency.code es PK alfanumérica, sin timestamps. Tipos de cambio de escala 8. |
+| Precios | Market, PricingPolicy, PricingPolicyVersion, ProductPricing, PricePublication, ProductPriceSnapshot, PriceHistory | Precios normalizados por mercado y publicación. PricingPolicy y PricingPolicyVersion son entidades distintas; no asumir una FK que no existe. |
+| Carrito | Cart, CartItem | Líneas únicas por carrito/producto; usuario o token de invitado. No implica que el carrito del frontend ya persista mediante estos modelos. |
+| Pedidos | Order, OrderItem, StockReservation, StockAllocation | orders incluye customer_email; líneas con snapshots. stock_reservations tiene cart_item_id y order_item_id nullable tras la migración de carrito. |
+| Pagos | PaymentTransaction, StripeEvent | Referencias Stripe únicas y esquema para registrar eventos; la lógica de cobro y procesamiento de eventos sigue incompleta. |
+| Búsqueda / integraciones | OutboxEvent, SearchSynonym, IntegrationSyncLog | Tablas auxiliares existentes. No equivalen a un índice Elasticsearch operativo. |
+| Cashier | Columnas Stripe en users; subscriptions y subscription_items | Las cinco migraciones publicadas por Cashier aparecen aplicadas. Modelos de suscripción proporcionados por Cashier. |
 
-## Huecos y decisiones de precisión
+## Correcciones frente al documento anterior
 
-- El esquema actual no tiene tablas para variantes, imágenes de producto, órdenes de compra, recepciones ni sus detalles. `search_synonyms` cubre términos generales, con alcance distinto de una relación con categorías. El índice de búsqueda externo puede consumir el outbox y evitar duplicar documentos como modelos Eloquent.
-- Los campos de costos, piso manual, precio base y costo asignado tienen escala 4. El tipo de cambio tiene escala 8. Los importes publicados y de venta tienen escala 2. Preservar cada escala con cadenas decimales al serializar y documentar política de redondeo.
-- Evitar asignación masiva de existencias, reservas, costos, roles, permisos, importes confirmados, estados de pago, referencias Stripe y claves de cotización. Cargar relaciones explícitas con columnas acotadas y una página a la vez.
-- El enunciado pide campos adicionales de producto y un comprador identificado por correo en prepedido. En el esquema actual el stock está normalizado en balances, los precios se separan en políticas y snapshots, y el pedido no tiene correo explícito. Descripciones corta/larga, imagen y vigencia requieren propuesta de esquema o decisión de equivalencia documentada.
-- Verificación histórica en MariaDB 10.11.16, 10 migraciones e índice `FULLTEXT`. En esta iteración se verificó el estado de 10 migraciones en SQLite, pendiente ejecutar pruebas de relaciones y validación comercial en MariaDB desechable.
+Ya existen product_images, purchase_orders, purchase_order_items y pricing_policies. products ya tiene vigencia y orders correo de cliente. StockReservation ya puede referenciar al carrito. MariaDB es el motor local; las verificaciones SQLite de documentos anteriores son evidencia histórica y no el objetivo de desarrollo actual.
 
-[Relaciones Eloquent](https://laravel.com/docs/12.x/eloquent-relationships)
+Product.description permanece en MariaDB como descripción original. Redis será una caché temporal de ese campo y Elasticsearch un índice reconstruible para buscar productos. No crear modelos Eloquent adicionales solo para representar copias de un mismo producto en esos sistemas. Ver [búsqueda y caché](SEARCH_AND_CACHE.md).
 
-## Modelos creados
+## Precisión y pendientes
 
-Se crearon 34 clases para las tablas disponibles. El pivote `product_categories` se cubre con una relación muchos a muchos. `ProductAttributeValue` se usa como modelo pivote de la relación por su columna `value` y su clave compuesta.
+Costos/precio base utilizan escala 4, tipos de cambio escala 8 e importes de venta escala 2 según sus migraciones. Evitar convertir valores monetarios definitivos a float como fuente de verdad. Precios y cantidades del navegador deben revalidarse en servidor.
 
-| Dominio | Clases creadas |
-|---|---|
-| Identidad | `CustomerProfile`, `CustomerAddress`, `SocialAccount` |
-| Catálogo | `Brand`, `Category`, `Product`, `ProductAttribute`, `ProductAttributeValue` |
-| Proveedores | `Supplier`, `SupplierProduct` |
-| Inventario | `Warehouse`, `InventoryBalance`, `InventoryLot`, `InventoryMovement` |
-| Divisas y precios | `Currency`, `ExchangeRate`, `ExchangeRateSyncLog`, `Market`, `PricingPolicyVersion`, `ProductPricing`, `PricePublication`, `ProductPriceSnapshot`, `PriceHistory` |
-| Carrito y pedidos | `Cart`, `CartItem`, `Order`, `OrderItem`, `StockReservation`, `StockAllocation` |
-| Pagos | `PaymentTransaction`, `StripeEvent` |
-| Búsqueda e integraciones | `OutboxEvent`, `SearchSynonym`, `IntegrationSyncLog` |
+PricingPolicy.products actualmente presupone pricing_policy_id en products; no se encontró esa columna en las migraciones. La relación necesita decisión/corrección humana antes de utilizarla. La importación HasMany de User.purchaseOrders ya existe: no sigue siendo un error pendiente de importación.
 
-Las clases se limitan a las tablas existentes. Las variantes, imágenes, compras y recepciones requieren primero un esquema aprobado. Spatie mantiene sus propios modelos de roles y permisos.
+La existencia de relaciones no implementa reservas, checkout, sincronización de búsquedas ni invalidación de caché. Esas reglas permanecen a cargo del desarrollador.
 
-**Verificación.** Pasaron la sintaxis PHP y Pint para los 34 archivos nuevos. En SQLite local, con `PRAGMA query_only=ON`, se comprobaron 34 tablas de modelo, 83 relaciones ejecutadas y 30 casts decimales. Se verificó la configuración de asignación masiva de campos sensibles y se corrigió `Market` para reflejar que su tabla carece de timestamps. La comprobación de esta entrega no cubrió MariaDB ni operaciones de escritura.
-
-**Login.** El flujo actual queda a cargo del guard `web` de Laravel con sesiones. `LoginRequest` usa `Auth::attempt` y `AuthenticatedSessionController` regenera la sesión al autenticar. `User.php` permanece a cargo del desarrollador y Spatie queda pendiente de integración en ese modelo para los roles y permisos.
-
-[Casts de Eloquent](https://laravel.com/docs/12.x/eloquent-mutators)
+La evidencia inicial de 83 relaciones y 30 casts en SQLite se conserva en el [documento histórico](../history/architecture/2026-11-17-before-review/ELOQUENT_MODELS.md); no se presenta como verificación actual de escrituras en MariaDB.

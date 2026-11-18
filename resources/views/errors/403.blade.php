@@ -1,0 +1,1 @@
+<x-site-layout title="Acceso restringido"><section class="store-wrap blade-page"><div class="blade-panel"><p class="eyebrow">403</p><h1>Acceso restringido</h1><p>Tu cuenta no tiene autorización para ver esta sección.</p><a class="store-button primary mt-5" href="{{ route('home') }}">Volver al inicio</a></div></section></x-site-layout>

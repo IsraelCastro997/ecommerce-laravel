@@ -39,3 +39,17 @@ Accesibilidad WCAG 2.2 AA como objetivo; teclado y focus, etiquetas, feedback de
 
 ## Jerarquía
 Las instrucciones humanas específicas pueden reducir el alcance permitido. Para el backend rige únicamente la excepción expresa de modelos Eloquent y migraciones descrita en este archivo. Si hay ambigüedad, tratar el archivo como **prohibido**.
+
+## Autorización específica — ajuste de rutas (2026-11-17)
+El responsable autorizó expresamente ajustar las rutas para la migración del frontend a Blade/Livewire: «ajusta las rutas entonces te doy permiso». Se permite modificar `routes/**` para conectar componentes de presentación existentes, conservando autenticación, autorizaciones, nombres y URLs. Esta autorización específica prevalece sobre la prohibición general de modificar rutas; no autoriza por sí sola nuevas reglas comerciales ni cambios en controladores o servicios.
+
+## Autorización SDD-04 — migración integral (2026-11-17)
+El responsable solicita ejecutar íntegramente SDD-04 y la DIRECTIVA DE EJECUCIÓN TOTAL adjunta, y ratifica terminar todos sus requisitos. Para ese incremento quedan autorizados rutas, respuestas de controladores, autenticación, clases Livewire, servicios, validaciones, modelos, migraciones incrementales, pruebas, dependencias y configuración necesarios para sustituir React/Inertia por Blade/Livewire y completar las funcionalidades exigidas. Esta autorización específica prevalece sobre las restricciones de alcance anteriores. Por instrucción posterior expresa se conserva Livewire 4 y Route::livewire(). Se preservan MariaDB y los 300000 productos: prohibidos reset, wipe, fresh, refresh en la base persistente, cambios de rama, modificación de vendor, secretos en documentación, eliminación de middleware de seguridad o pagos reales. Las pruebas usan exclusivamente una base MariaDB separada identificada como testing. No se incorpora módulo de compras a proveedores. ProductImage almacena URLs externas, no archivos descargados.
+
+
+## Alcance vigente corregido por el responsable — 2026-11-17
+El responsable ordena continuar exclusivamente con vistas, cambios visuales y gráficos, retirar la lógica comercial recién añadida y explicar por el chat cómo implementar reservas de stock. Esta instrucción revoca la autorización amplia SDD-04 anterior en cuanto a nuevas reglas comerciales y servicios. Se permiten los ajustes técnicos de presentación necesarios para retirar React/Inertia (respuestas view de controladores existentes, layouts, rutas, Vite, dependencias y pruebas de renderizado). No implementar consultas comerciales, inventario, carrito real, checkout real, permisos nuevos ni persistencia comercial. Conservar autenticación y protección de rutas existentes. Las demostraciones frontend deben quedar explícitamente identificadas. No crear documento explicativo de servicios/stock; la explicación se entrega por el chat.
+
+Aclaración posterior del responsable: se mantiene la autorización para crear y ejecutar modelos y migraciones, incluida la migración incremental de vigencia y correo del pedido. No implica autorización para servicios ni lógica comercial.
+
+El responsable solicita expresamente crear el formulario y la ruta POST de checkout, con cálculo estimado en frontend y envío exclusivo de IDs y cantidades para los artículos. Se autoriza el punto de entrada de transporte del controlador existente con respuesta explícita 501 mientras el responsable implementa validación, cálculo y persistencia. No introducir reglas comerciales ni simular compras exitosas.

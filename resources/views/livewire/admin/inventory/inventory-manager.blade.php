@@ -1,3 +1,1 @@
-<div>
-    {{-- Simplicity is the ultimate sophistication. - Leonardo da Vinci --}}
-</div>
+<div class="store-wrap blade-page"><x-admin.workspace title="Inventario" dataset="inventory"  /></div>

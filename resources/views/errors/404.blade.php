@@ -1,0 +1,1 @@
+<x-site-layout title="El sendero termina aquí"><section class="store-wrap blade-page"><div class="blade-panel"><p class="eyebrow">404</p><h1>El sendero termina aquí</h1><p>No encontramos la página que buscas.</p><a class="store-button primary mt-5" href="{{ route('home') }}">Volver al inicio</a></div></section></x-site-layout>

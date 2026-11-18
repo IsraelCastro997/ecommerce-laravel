@@ -1,0 +1,1 @@
+<x-site-layout title="Volvemos pronto"><section class="store-wrap blade-page"><div class="blade-panel"><p class="eyebrow">503</p><h1>Volvemos pronto</h1><p>La tienda está temporalmente en mantenimiento.</p><a class="store-button primary mt-5" href="{{ route('home') }}">Volver al inicio</a></div></section></x-site-layout>

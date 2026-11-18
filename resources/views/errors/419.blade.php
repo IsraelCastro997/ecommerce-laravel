@@ -1,0 +1,1 @@
+<x-site-layout title="Tu sesión ha caducado"><section class="store-wrap blade-page"><div class="blade-panel"><p class="eyebrow">419</p><h1>Tu sesión ha caducado</h1><p>Vuelve a cargar el formulario e inténtalo de nuevo.</p><a class="store-button primary mt-5" href="{{ route('home') }}">Volver al inicio</a></div></section></x-site-layout>

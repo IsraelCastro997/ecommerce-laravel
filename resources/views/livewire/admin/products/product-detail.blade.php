@@ -1,3 +1,1 @@
-<div>
-    {{-- The whole future lies in uncertainty: live immediately. - Seneca --}}
-</div>
+<div class="store-wrap blade-page"><x-admin.workspace title="Detalle de producto" dataset="products"  /></div>

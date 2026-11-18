@@ -1,0 +1,27 @@
+{
+  "status": "PASS",
+  "checks": [
+    "desktop: filtros, búsqueda, estado vacío, orden, lista, vista rápida, bolsa, foco e imagen fallida",
+    "320px: catálogo, filtros, vista rápida y detalle sin desbordamiento",
+    "390px: catálogo, filtros, vista rápida y detalle sin desbordamiento",
+    "768px: catálogo, filtros, vista rápida y detalle sin desbordamiento"
+  ],
+  "browserErrors": [],
+  "screenshots": [
+    "catalog-320.png",
+    "catalog-390.png",
+    "catalog-768.png",
+    "catalog-desktop.png",
+    "catalog-empty.png",
+    "catalog-list.png",
+    "catalog-quickview.png",
+    "home-desktop.png",
+    "product-320.png",
+    "product-390.png",
+    "product-768.png",
+    "product-desktop.png",
+    "quickview-320.png",
+    "quickview-390.png",
+    "quickview-768.png"
+  ]
+}

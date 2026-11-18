@@ -1,0 +1,1 @@
+<x-site-layout title="Un momento de pausa"><section class="store-wrap blade-page"><div class="blade-panel"><p class="eyebrow">429</p><h1>Un momento de pausa</h1><p>Has enviado demasiadas solicitudes. Inténtalo de nuevo en unos minutos.</p><a class="store-button primary mt-5" href="{{ route('home') }}">Volver al inicio</a></div></section></x-site-layout>

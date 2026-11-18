@@ -1,28 +1,54 @@
 # Refugio Outdoor
 
-Prototipo de e-commerce Laravel 12. La tienda y la cuenta usan React con Inertia. Livewire 4 está instalado y los componentes de presentación de la futura administración están en `resources/views/components/admin`. La administración accesible hoy es la demostración dentro de `/dashboard`.
+Laravel 12 + Livewire 4 + Blade + Alpine.js + Tailwind CSS + Vite. React e Inertia fueron retirados. Por indicación posterior del responsable se conserva Livewire 4, aunque el documento original solicitaba la versión 3.
 
-## Desarrollo local
+La entrega actual es frontend. Catálogo, bolsa, administración y gráficos usan datos de demostración claramente identificados. Login, registro, recuperación/restablecimiento, perfil, contraseña y logout conservan los controladores nativos existentes y ahora renderizan Blade. No hay servicios comerciales implementados por el agente.
 
-1. Usa las dependencias bloqueadas en `composer.lock` y `package-lock.json`. Ejecuta `composer install` y `npm ci`.
-2. Si es una instalación nueva, crea `.env` a partir de `.env.example`, genera la clave local y prepara una base de desarrollo. SQLite sirve para revisar el prototipo. MariaDB es el objetivo del esquema. El responsable aplica las migraciones a la base destinada al desarrollo.
-3. En dos terminales ejecuta `php artisan serve --host=127.0.0.1 --port=8000` y `npm run dev -- --host 127.0.0.1 --port 5173`.
-4. Abre [la tienda local](http://127.0.0.1:8000) o [el dashboard](http://127.0.0.1:8000/dashboard). Puedes registrar una cuenta sintética para ver el prototipo; el proyecto todavía no provisiona un administrador.
+## Inicio local
 
-El checkout de demostración conserva el pago deshabilitado. El carrito guarda SKU y cantidades de muestra en este navegador. El repositorio excluye `.env` y la base SQLite local.
+1. Ejecutar composer install y npm ci.
+2. Configurar .env para MariaDB/MySQL local. No crear SQLite ni reiniciar la base existente. La base local conserva 300000 productos.
+3. Ejecutar npm run build para usar assets compilados, o mantener npm run dev en otra terminal durante desarrollo.
+4. Ejecutar php artisan serve --host=127.0.0.1 --port=8000.
+5. Abrir http://127.0.0.1:8000.
+
+La migración incremental de vigencia y correo del pedido ya se aplicó a la base local. No ejecutar el seeder masivo sobre un catálogo poblado.
+
+## Pantallas
+
+- Tienda: /, /catalogo, /productos/{product}, /carrito, /checkout, /pedido-confirmado/{order}.
+- Cuenta autenticada: /dashboard, /cuenta, /cuenta/pedidos, /cuenta/pedidos/{order}, /cuenta/direcciones, /cuenta/moneda.
+- Ajustes: /settings/profile, /settings/password, /settings/appearance.
+- Autenticación: /login, /register, /forgot-password, /reset-password/{token}, /confirm-password, /verify-email.
+- Administración: /admin y módulos de productos, categorías, marcas, atributos, inventario, almacenes, precios, pedidos, pagos, clientes, permisos, reportes, divisas, integraciones y configuración.
+
+Las rutas administrativas conservan auth y can:access-admin. La configuración real de permisos sigue a cargo del responsable; no se abrió acceso para evitar un 403. El dashboard de cuenta conserva una demostración visual de administración separada, sin operaciones reales.
+
+## Bolsa y formulario
+
+La bolsa conserva cantidades y moneda en localStorage y muestra importes estimados e IVA del 16 %. El formulario tiene CSRF y envía IDs y cantidades, correo y moneda, sin precios ni totales. POST /checkout, nombre store.checkout.store, está conectado a CheckoutController::store, que responde HTTP 501 explícitamente hasta que el responsable implemente el backend. No crea pedidos ni cobra.
+
+Los productos visuales de ejemplo no reciben IDs arbitrarios de MariaDB. El layout admite DTOs de catálogo mediante la propiedad catalogProducts; el frontend requiere product_id numérico real para enviar. La consulta y provisión de esos datos corresponde al backend humano.
+
+Las imágenes existentes de diseño se preservaron. No se implementaron subidas ni descargas de imágenes de productos. DataTables queda sin integrar por decisión del responsable.
+
+## Verificación
+
+- npm run lint
+- npm run test:frontend
+- npm run build
+- php artisan test --compact
+
+PHPUnit usa exclusivamente MariaDB ecommerce_frontend_testing. Crear esa base separada antes de ejecutar las pruebas. Existe una guarda que rechaza ejecutar la suite con otra base; no utilizar la base persistente de 300000 productos para fixtures destructivos.
+
+La verificación de navegador está en docs/testing/browser-sdd04.cjs; recibe SDD_PLAYWRIGHT_MODULE y opcionalmente SDD_BASE_URL. Debe apuntar a un servidor sobre la base separada de pruebas. No instalar una segunda instancia de Alpine: Livewire ya la proporciona.
 
 ## Documentación
 
-- [Historial completo del proyecto](docs/TRABAJO_REALIZADO.md)
-- [Resultado de SDD-02 y matriz del enunciado](docs/iterations/SDD-02-RESULT.md)
-- [Contrato y pendientes de servidor](docs/contracts/BACKEND_CONTRACTS.md)
-- [Verificación de SDD-02](docs/testing/SDD-02-TESTS.md)
+- [Historial del proyecto](docs/TRABAJO_REALIZADO.md)
+- [Migración del frontend](docs/migrations/SDD-04-INERTIA-TO-LIVEWIRE.md)
+- [Arquitectura actual](docs/architecture/FRONTEND-ARCHITECTURE.md)
+- [Verificación SDD-04](docs/testing/SDD-04-ACCEPTANCE.md)
+- [README original](docs/history/README_ORIGINAL.md)
 
-## Documentos de planificación
-
-- [Instrucciones vigentes para agentes](AGENTS.md)
-- [Plan inicial de bootstrap](AGENTS_FRONTEND_BOOTSTRAP.md)
-- [Especificación inicial del frontend](SDD_FRONTEND_BOOTSTRAP_ECOMMERCE.md)
-- [README original de planificación](docs/history/README_ORIGINAL.md)
-
-El README original de planificación está fechado el 14 de noviembre de 2026 y describe el planteamiento inicial con Vue. El frontend actual utiliza React con Inertia y Livewire 4. Los planes de bootstrap se conservan como antecedentes. El historial de trabajo documenta las decisiones posteriores y la excepción autorizada para crear modelos Eloquent nuevos.
+Los documentos SDD-02 y de bootstrap se conservan como antecedentes; las referencias históricas a Vue, React o Inertia no describen el stack actual.

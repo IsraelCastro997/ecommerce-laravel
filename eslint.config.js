@@ -1,10 +1,8 @@
 import js from '@eslint/js';
 import prettier from 'eslint-config-prettier';
-import tseslint from 'typescript-eslint';
-
-export default tseslint.config(
-    { ignores: ['vendor/', 'node_modules/', 'public/', 'bootstrap/ssr/'] },
-    js.configs.recommended,
-    ...tseslint.configs.recommended,
-    prettier,
-);
+export default [
+ { ignores: ['vendor/**','node_modules/**','public/**'] },
+ js.configs.recommended,
+ { languageOptions: { globals: { document: 'readonly', window: 'readonly', localStorage: 'readonly', location: 'readonly', URLSearchParams: 'readonly', structuredClone: 'readonly', URL: 'readonly', fetch: 'readonly', console: 'readonly' } } },
+ prettier,
+];

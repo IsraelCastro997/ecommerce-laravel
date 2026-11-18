@@ -1,3 +1,1 @@
-<div>
-    {{-- Do what you can, with what you have, where you are. - Theodore Roosevelt --}}
-</div>
+<div class="store-wrap blade-page"><x-admin.workspace title="Índice de búsqueda" dataset="sync"  /></div>

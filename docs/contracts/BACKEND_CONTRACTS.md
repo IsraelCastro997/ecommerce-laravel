@@ -8,7 +8,7 @@ Estos contratos son propuestas para la conexión manual. La aplicación operativ
 - Las mutaciones aceptan el producto, la cantidad solicitada y la revisión del carrito. El servidor autoriza la cantidad, devuelve la versión y comunica conflictos de stock, precio y vencimiento por línea.
 - Usar cadenas decimales con moneda explícita. Distinguir precio base, precio mostrado y precio confirmado. Devolver subtotal, descuentos, impuestos, envío y total mediante una cotización vigente e identificada. Para la evaluación, incluir la cotización MXN y USD, IVA 16 % y correo del comprador antes del prepedido, con reglas y redondeo definidos por el responsable.
 - Asegurar idempotencia y validar revisión, cantidades y cotización antes de confirmar. El estado de pago confirmado solo llega por una respuesta autorizada del servidor.
-- Ver propuestas de `Cart`, `CartItem`, `CartTotals`, `CartCurrency`, `CartValidationError`, `ShippingQuote` y `CheckoutSummary` en `resources/js/types/commerce.ts`.
+- Ver propuestas de `Cart`, `CartItem`, `CartTotals`, `CartCurrency`, `CartValidationError`, `ShippingQuote` y `CheckoutSummary` en los antecedentes SDD-02 (los tipos React fueron retirados; el frontend actual usa DTOs de presentación).
 
 ## Panel de cliente
 

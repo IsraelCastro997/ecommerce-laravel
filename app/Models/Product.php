@@ -24,6 +24,8 @@ class Product extends Model
     {
         return [
             'version' => 'integer',
+            'available_from' => 'datetime',
+            'available_until' => 'datetime',
         ];
     }
 

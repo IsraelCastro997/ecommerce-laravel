@@ -1,3 +1,1 @@
-<div>
-    {{-- When there is no desire, all things are at peace. - Laozi --}}
-</div>
+<div class="store-wrap blade-page"><x-admin.workspace title="Detalle de pedido" dataset="orders"  /></div>

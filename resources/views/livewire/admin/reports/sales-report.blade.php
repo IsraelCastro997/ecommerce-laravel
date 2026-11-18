@@ -1,3 +1,1 @@
-<div>
-    {{-- Happiness is not something readymade. It comes from your own actions. - Dalai Lama --}}
-</div>
+<div class="store-wrap blade-page"><x-admin.workspace title="Ventas y ganancias" dataset="orders" :report="true" /></div>

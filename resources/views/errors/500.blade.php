@@ -1,0 +1,1 @@
+<x-site-layout title="Algo salió del camino"><section class="store-wrap blade-page"><div class="blade-panel"><p class="eyebrow">500</p><h1>Algo salió del camino</h1><p>Ocurrió un error al cargar la página. Inténtalo más tarde.</p><a class="store-button primary mt-5" href="{{ route('home') }}">Volver al inicio</a></div></section></x-site-layout>

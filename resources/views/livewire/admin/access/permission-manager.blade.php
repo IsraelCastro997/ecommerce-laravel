@@ -1,3 +1,1 @@
-<div>
-    {{-- He who is contented is rich. - Laozi --}}
-</div>
+<div class="store-wrap blade-page"><x-admin.workspace title="Permisos" dataset="users"  /></div>

@@ -1,3 +1,1 @@
-<div>
-    {{-- Life is available only in the present moment. - Thich Nhat Hanh --}}
-</div>
+<div class="store-wrap blade-page"><x-admin.workspace title="Marcas" dataset="catalog"  /></div>

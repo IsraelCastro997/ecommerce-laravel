@@ -1,3 +1,1 @@
-<div>
-    {{-- Very little is needed to make a happy life. - Marcus Aurelius --}}
-</div>
+<div class="store-wrap blade-page" x-data><h1>Moneda de presentación</h1><x-account-nav /><section class="blade-panel"><h2 class="text-xl font-bold mb-4">Explora en tu moneda</h2><label>Moneda<select class="ml-3" :value="$store.shop.currency" @change="$store.shop.setCurrency($event.target.value)"><option>MXN</option><option>USD</option></select></label><p class="page-note">La preferencia se conserva en este navegador. Los precios mostrados son importes de ejemplo; la moneda del cobro deberá confirmarse en el servidor.</p></section></div>

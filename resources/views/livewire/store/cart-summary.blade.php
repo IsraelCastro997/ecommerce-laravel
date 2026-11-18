@@ -1,3 +1,1 @@
-<div>
-    {{-- Smile, breathe, and go slowly. - Thich Nhat Hanh --}}
-</div>
+<div><section class="store-wrap"><x-cart-preview /></section></div>

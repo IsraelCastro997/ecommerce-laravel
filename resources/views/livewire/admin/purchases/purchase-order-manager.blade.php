@@ -1,3 +1,1 @@
-<div>
-    {{-- It is never too late to be what you might have been. - George Eliot --}}
-</div>
+<div class="store-wrap blade-page"><section class="blade-panel"><h1>Compras a proveedores</h1><p>Este módulo está fuera del alcance actual por decisión del responsable.</p><a class="store-button primary mt-4" href="{{ route('admin.dashboard') }}">Volver al panel</a></section></div>

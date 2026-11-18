@@ -3,40 +3,27 @@
     "type": "module",
     "scripts": {
         "build": "vite build",
-        "build:ssr": "vite build && vite build --ssr",
         "dev": "vite",
         "format": "prettier --write resources/",
         "format:check": "prettier --check resources/",
-        "lint": "eslint resources/js",
-        "typecheck": "tsc --noEmit"
+        "lint": "eslint resources/js vite.config.js",
+        "test:frontend": "node --test tests/Frontend/*.test.js"
     },
     "devDependencies": {
         "@eslint/js": "^9.19.0",
-        "@types/react": "^19.3.0",
-        "@types/react-dom": "^19.3.0",
-        "@vitejs/plugin-react": "^4.7.0",
         "eslint": "^9.17.0",
         "eslint-config-prettier": "^10.0.1",
         "prettier": "^3.4.2",
-        "prettier-plugin-organize-imports": "^4.1.0",
-        "prettier-plugin-tailwindcss": "^0.6.9",
-        "typescript-eslint": "^8.23.0"
+        "prettier-plugin-tailwindcss": "^0.6.9"
     },
     "dependencies": {
-        "@inertiajs/react": "^2.3.29",
         "@tailwindcss/forms": "^0.5.3",
-        "@types/node": "^22.10.2",
         "autoprefixer": "^10.4.20",
         "concurrently": "^9.0.1",
         "laravel-vite-plugin": "^1.0",
-        "lucide-react": "^0.468.0",
-        "react": "^19.3.1",
-        "react-dom": "^19.3.1",
         "tailwindcss": "^3.4.1",
         "tailwindcss-animate": "^1.0.7",
-        "typescript": "^5.2.2",
-        "vite": "^6.0.3",
-        "ziggy-js": "^2.4.2"
+        "vite": "^6.0.3"
     },
     "optionalDependencies": {
         "@rollup/rollup-linux-x64-gnu": "4.9.5",

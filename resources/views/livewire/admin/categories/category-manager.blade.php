@@ -1,3 +1,1 @@
-<div>
-    {{-- Order your soul. Reduce your wants. - Augustine --}}
-</div>
+<div class="store-wrap blade-page"><x-admin.workspace title="Categorías" dataset="catalog"  /></div>

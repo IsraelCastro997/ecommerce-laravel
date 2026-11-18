@@ -1,3 +1,1 @@
-<div>
-    {{-- The only way to do great work is to love what you do. - Steve Jobs --}}
-</div>
+<div class="store-wrap blade-page"><x-admin.workspace title="Panel de administración" dataset="products" :report="true" /></div>

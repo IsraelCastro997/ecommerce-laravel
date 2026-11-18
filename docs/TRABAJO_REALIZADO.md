@@ -52,3 +52,47 @@
 El responsable autorizó una excepción limitada al alta de modelos nuevos en `app/Models`. Se crearon 34 clases con Artisan y se definieron relaciones, claves, casts y protección contra asignación masiva a partir de las tablas existentes. El login conserva el guard `web` y la sesión nativa de Laravel. La configuración de `User` y la integración de roles siguen a cargo del desarrollador.
 
 Se verificaron 83 relaciones y 30 casts decimales con SQLite en modo de solo lectura. [Inventario y verificación de Eloquent](architecture/ELOQUENT_MODELS.md)
+
+## 8. Ajuste de rutas para Livewire — 2026-11-17
+
+- Por autorización expresa del responsable, se adaptaron 18 rutas de tienda, cuenta y administración de `Route::livewire()` a `Route::get(..., Componente::class)`, compatible con componentes de página completa de Livewire 3.
+- Archivos modificados: `routes/store.php`, `routes/account.php`, `routes/admin.php`; se registró la excepción de rutas en `AGENTS.md`.
+- Se preservaron URLs, nombres de rutas y middleware `auth` y `can:access-admin`.
+- Verificación: sintaxis PHP correcta en los tres archivos; `php artisan route:list --except-vendor --no-ansi` terminó correctamente y registró 41 rutas.
+- Alcance de esta verificación: registro de rutas; no acredita el funcionamiento de las pantallas. Las vistas Livewire inspeccionadas de catálogo y dashboard todavía son esqueletos vacíos y no existe el layout predeterminado. Inicio, dashboard y apariencia continúan devolviendo Inertia; la dependencia instalada sigue siendo Livewire 4. La migración completa solicitada en SDD-04 aún está pendiente y no se declara terminada en esta actualización.
+- No se ejecutaron migraciones, seeders ni cambios sobre los datos de MariaDB durante este ajuste.
+
+
+## 9. Migración de presentación a Blade/Livewire 4 — 2026-11-17
+
+El responsable aclaró conservar Livewire 4, retirar React/Inertia y completar vistas, gráficos y rutas. Posteriormente ordenó retirar la lógica comercial añadida y explicar stock por el chat, conservando la autorización para modelos y migraciones. Esa instrucción sustituye el alcance integral del SDD original.
+
+Se migraron home, catálogo, detalle, bolsa, checkout, cuenta, pedidos de muestra, direcciones, moneda, autenticación, perfil, contraseña, apariencia y vistas administrativas. Se añadieron navegación, tablas, estados vacíos, filtros, modales y gráficos de demostración. Las rutas account.php quedan cubiertas y las rutas admin.php se ampliaron para los componentes visuales existentes, conservando auth y can:access-admin.
+
+Se eliminaron React/Inertia de código y dependencias. Se preservaron los assets y CSS anteriores. Los controladores de autenticación solo cambiaron sus respuestas de presentación. No se añadió configuración de User ni Spatie. Se retiraron los servicios comerciales y los comandos recién creados. La migración incremental de vigencia y correo se mantuvo, se aplicó en MariaDB y se añadieron los casts de fechas correspondientes en Product.
+
+Por solicitud posterior se creó POST /checkout y el formulario con CSRF. El frontend calcula estimaciones e IVA y prepara solo IDs/cantidades, correo y moneda; el controlador devuelve 501 explícito mientras el responsable implementa su backend. No se atribuyen IDs reales a productos ficticios.
+
+Verificación actual: 51 pruebas Laravel, 257 assertions, sin fallos ni deprecaciones; 4 pruebas frontend; lint y build correctos. Suite aislada en ecommerce_frontend_testing; base persistente conservada con 300000 productos. Capturas y resultados del navegador en docs/testing. La migración integral del backend del SDD no se declara completada.
+
+## 10. Revisión frontend y rediseño del catálogo — 2026-11-17
+
+Se revisaron 50 vistas Livewire y la cobertura de rutas. Se instaló frontend-design desde anthropics/skills mediante skill-installer, se aplicó a la identidad visual de Refugio y se documentaron los formularios/pantallas que aún son genéricos. Véase docs/reviews/FRONTEND_AUDIT_2026-11-17.md.
+
+Se rediseñaron catálogo público y detalle: fotografía con proporciones correctas, tipografía local, filtros móviles, categorías, búsqueda sin acentos, lista/cuadrícula, filtros activos, vista rápida accesible y aviso de bolsa. Se añadió soporte de URLs externas con alternativa de imagen y se corrigió el estado vacío de pedidos de ejemplo desconocidos. Se conservaron las reglas de selección de productos y el payload sin precios.
+
+Cambios de este incremento limitados a vistas, CSS, JavaScript de presentación, assets de fuentes, pruebas frontend/renderizado y documentación. No se añadieron consultas, controladores, servicios, rutas ni cambios de datos. Se conserva el trabajo previo sin commit ni push.
+
+## 11. Actualización de arquitectura y revisión de Stripe — 2026-11-17
+
+Se revisaron los documentos de docs/architecture y se corrigieron referencias obsoletas a tablas ausentes, SQLite, cantidad de modelos y relaciones de reservas. Se documentó como arquitectura objetivo Elasticsearch para búsqueda de productos y Redis para caché de descripciones, con MariaDB como fuente de verdad. Se preservaron las versiones anteriores en docs/history/architecture/2026-11-17-before-review. No se instalaron paquetes ni se implementaron integraciones.
+
+Se consultaron archivos actuales y documentación oficial de Laravel, Elastic y Stripe. migrate:status informó 21 migraciones aplicadas, incluidas las de Cashier; la consulta no ejecutó migraciones. Se comprobó la ruta de webhook con validación de firma. Se identificaron pendientes del checkout añadido por el responsable: variables todavía sin definir, URLs de retorno, apertura frontend de checkout_url y procesamiento de eventos de pago. No se modificó ese código ni se hicieron llamadas de cobro a Stripe.
+
+## 12. Vistas de retorno de Stripe — 2026-11-17
+
+Se crearon resources/views/checkout/success.blade.php y cancel.blade.php, con el componente compartido checkout-result y estilos de Refugio. Se registraron GET /checkout/success y GET /checkout/cancel, nombres store.checkout.success y store.checkout.cancel, bajo auth. El helper de checkout existente apunta ahora a estas rutas; se conserva el marcador literal de session_id para Stripe.
+
+La vista success muestra un estado pendiente de verificación y no confirma cobros a partir de la URL. Cancel permite volver a la bolsa o al checkout, sin vaciar la bolsa ni declarar un rechazo bancario. No se añadió lógica de pagos, consultas de pedidos ni procesamiento de webhooks.
+
+Verificación de este incremento: 27 pruebas de presentación correctas, 207 assertions, y build de Vite correcto.

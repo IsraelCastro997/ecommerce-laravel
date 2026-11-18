@@ -1,3 +1,1 @@
-<div>
-    {{-- Nothing in life is to be feared, it is only to be understood. Now is the time to understand more, so that we may fear less. - Maria Skłodowska-Curie --}}
-</div>
+<div class="store-wrap blade-page"><section class="blade-panel"><p class="eyebrow">ESTADO DEL PEDIDO</p><h1>Sin confirmación del servidor</h1><p>Esta pantalla no acredita una compra ni un pago. Para mostrar el pedido deberá recibirse una respuesta autorizada del backend.</p><a class="store-button primary mt-5" href="{{ route('store.catalog') }}">Volver a explorar</a></section></div>

@@ -1,3 +1,1 @@
-<div>
-    {{-- Breathing in, I calm body and mind. Breathing out, I smile. - Thich Nhat Hanh --}}
-</div>
+<div class="store-wrap blade-page"><x-admin.workspace title="Atributos" dataset="catalog"  /></div>

@@ -1,19 +1,20 @@
-# Relaciones revisadas en SDD-03
+# Relaciones Eloquent y pendientes
 
-Product enlaza marca, categoría principal, categorías, atributos mediante pivote, proveedores, balances, lotes, movimientos, reservas, precios, snapshots, historial, carrito y pedido. La relación images añadida apunta a ProductImage y ordena por sort_order. Su tabla está descrita en una migración nueva y requiere confirmar que se aplicó al motor destino.
+Revisión: 2026-11-17, basada en archivos actuales y estado de migraciones. No se modificaron modelos ni se ejecutaron operaciones comerciales.
 
-ProductAttributeValue es un Pivot con timestamps deshabilitados. Las escrituras deben realizarse a través de la relación product_attribute_values con ambas claves y value. Comprobar attach, lectura, actualización y detach con fixtures aislados en MariaDB.
+- Product relaciona marca, categoría principal, categorías, atributos, proveedores, balances, lotes, movimientos, reservas, precios, snapshots, historial, carrito, pedidos, imágenes y detalles de compra. Product.images ordena por sort_order; product_images ya está migrada.
+- ProductAttributeValue es un Pivot con timestamps deshabilitados y clave compuesta. Verificar sus operaciones con fixtures aislados antes de utilizarlo en escritura.
+- PricingPolicy.products sigue suponiendo una FK pricing_policy_id que no existe en la definición de products. Definir el enlace con product_pricing y las versiones de política antes de usarla.
+- User.purchaseOrders ya importa HasMany. User usa Billable de Cashier, pero no HasRoles de Spatie en el archivo inspeccionado. La configuración de identidad/permisos continúa a cargo del responsable.
+- PurchaseOrder y PurchaseOrderItem ya tienen tablas migradas. La existencia de esas entidades no reactiva el módulo de compras a proveedores, excluido del alcance actual.
+- StockReservation relaciona CartItem, OrderItem, Product y Warehouse. cart_item_id y order_item_id admiten null conforme a la migración de reservas de carrito. La regla de vinculación y transferencia es responsabilidad del backend; no se implementó en esta revisión.
+- InventoryBalance pertenece a Product y Warehouse, con qty_on_hand y qty_reserved. Los contadores requieren reglas transaccionales del backend.
+- PaymentTransaction pertenece a Order. StripeEvent no declara una FK de pedido/transacción: correlacionar la sesión Stripe con el pedido y procesar eventos es lógica que aún debe implementarse.
+- OutboxEvent, SearchSynonym e IntegrationSyncLog dan soporte relacional a integraciones. Elasticsearch no requiere una FK hacia su índice ni un modelo Eloquent que sustituya Product.
+- Redis no introduce una relación Eloquent con las descripciones: conserva copias temporales de products.description, que permanece en MariaDB.
 
-PricingPolicy.products supone una FK ausente en la definición products inspeccionada. Decidir el enlace entre política, versión de política y product_pricing antes de crear relaciones adicionales.
+## Verificación y límites
 
-User.purchaseOrders necesita corregir la resolución del tipo HasMany. Las relaciones de identidad y Spatie siguen pendientes de completar manualmente.
+migrate:status informó 21 migraciones aplicadas. No se auditaron aquí todas las FK reales ni todas las lecturas/escrituras de relaciones. Validar soft deletes, pivotes, escalas y operaciones comerciales mediante una base MariaDB de pruebas aislada.
 
-PurchaseOrder, PurchaseOrderItem y relaciones desde Supplier y Product existen como archivos nuevos. Se pospone su desarrollo funcional por la decisión del responsable.
-
-StockReservation pertenece al detalle de pedido, producto y almacén. InventoryBalance pertenece a producto y almacén, con cantidades on_hand y reserved. El vínculo de reserva a carrito y su transferencia posterior al pedido requieren decisión de esquema.
-
-PaymentTransaction pertenece a Order. StripeEvent no tiene FK hacia transacción declarada en el esquema original. La correlación de eventos de pago requiere contrato explícito.
-
-## Pendientes de validación real
-
-Confirmar tablas y FK aplicadas, esquema de timestamps y escalas. Probar resultados de relaciones con datos mínimos, incluyendo recursos con soft deletes y pivotes compuestos. Verificar en MariaDB antes de declarar compatibilidad de escritura.
+Ver [inventario vigente](ELOQUENT_MODELS.md) y [arquitectura de búsqueda/caché](SEARCH_AND_CACHE.md). La versión anterior se conserva en docs/history/architecture/2026-11-17-before-review.

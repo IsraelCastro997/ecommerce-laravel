@@ -1,0 +1,2 @@
+@props(['name', 'label', 'type' => 'text', 'value' => null, 'autocomplete' => null, 'required' => true])
+<label for="{{ $name }}">{{ $label }}<input id="{{ $name }}" name="{{ $name }}" type="{{ $type }}" @if($type !== 'password') value="{{ old($name, $value) }}" @endif @if($autocomplete) autocomplete="{{ $autocomplete }}" @endif @required($required) @if($errors->has($name)) aria-invalid="true" aria-describedby="{{ $name }}-error" @endif {{ $attributes }}>@error($name)<span id="{{ $name }}-error" class="blade-error">{{ $message }}</span>@enderror</label>

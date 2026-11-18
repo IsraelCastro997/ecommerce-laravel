@@ -1,3 +1,1 @@
-<div>
-    {{-- I begin to speak only when I am certain what I will say is not better left unsaid. - Cato the Younger --}}
-</div>
+<div class="store-wrap blade-page"><x-admin.workspace title="Políticas de precios" dataset="pricing"  /></div>

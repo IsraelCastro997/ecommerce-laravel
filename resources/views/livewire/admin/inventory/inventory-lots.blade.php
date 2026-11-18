@@ -1,3 +1,1 @@
-<div>
-    {{-- Very little is needed to make a happy life. - Marcus Aurelius --}}
-</div>
+<div class="store-wrap blade-page"><x-admin.workspace title="Lotes" dataset="inventory"  /></div>
