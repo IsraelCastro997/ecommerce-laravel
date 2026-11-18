@@ -53,3 +53,18 @@ El responsable ordena continuar exclusivamente con vistas, cambios visuales y gr
 Aclaración posterior del responsable: se mantiene la autorización para crear y ejecutar modelos y migraciones, incluida la migración incremental de vigencia y correo del pedido. No implica autorización para servicios ni lógica comercial.
 
 El responsable solicita expresamente crear el formulario y la ruta POST de checkout, con cálculo estimado en frontend y envío exclusivo de IDs y cantidades para los artículos. Se autoriza el punto de entrada de transporte del controlador existente con respuesta explícita 501 mientras el responsable implementa validación, cálculo y persistencia. No introducir reglas comerciales ni simular compras exitosas.
+
+## Modelos fuera del prototipo principal — decisión del responsable (2026-11-17)
+El responsable confirma dejar pendientes los siguientes modelos y sus funcionalidades:
+- Compras a proveedores: `Supplier`, `SupplierProduct`, `PurchaseOrder`, `PurchaseOrderItem`.
+- Inventario avanzado por lotes, movimientos y asignaciones: `InventoryLot`, `InventoryMovement`, `StockAllocation`.
+- Reglas avanzadas e historial de precios: `PricingPolicy`, `PricingPolicyVersion`, `PriceHistory`.
+- Perfiles y direcciones adicionales: `CustomerProfile`, `CustomerAddress`.
+- Seguimiento avanzado de integraciones y sinónimos: `OutboxEvent`, `IntegrationSyncLog`, `ExchangeRateSyncLog`, `SearchSynonym`.
+- Atributos configurables: `ProductAttribute`, `ProductAttributeValue`.
+
+Los agentes no deben incorporar estos 18 modelos a funcionalidades nuevas, consultas, pantallas, formularios, servicios, ejemplos ni propuestas de implementación del prototipo. Tampoco deben completar sus módulos o añadir dependencias nuevas hacia ellos. Solo una instrucción humana expresa posterior puede reincorporarlos al alcance.
+
+Esta exclusión no ordena eliminar ni modificar modelos, relaciones, tablas, migraciones o datos existentes. Se permite inspeccionar referencias existentes para identificar dependencias y comunicar bloqueos; no sustituirlas ni eliminarlas automáticamente.
+
+Se conservan en el alcance funcional del prototipo los productos y su catálogo, autenticación, carrito, pedidos y pagos, y el inventario básico mediante `Warehouse`, `InventoryBalance` y `StockReservation`. Se reutiliza el esquema de monedas, tipos de cambio y precios publicados existente, sin desarrollar un motor avanzado de precios. Banxico, Redis, Elasticsearch, autenticación con Google y DataTables siguen siendo requisitos solicitados; excluir los modelos anteriores no excluye esas integraciones. Esta definición funcional no amplía los permisos de implementación backend establecidos arriba.

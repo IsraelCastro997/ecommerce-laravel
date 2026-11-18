@@ -73,19 +73,68 @@ document.addEventListener('alpine:init', () => {
    if (!this.endpoint) { this.feedback = 'La solicitud está preparada, pero falta conectar la ruta POST del controlador.'; return; }
    const destination = new URL(this.endpoint, window.location.origin);
    if (destination.origin !== window.location.origin) { this.feedback = 'El destino de compra debe pertenecer a esta aplicación.'; return; }
+   items.sort((a, b) => a.product_id - b.product_id);
+
+const signature = JSON.stringify({
+ email: this.email,
+ currency: shop.currency,
+ items,
+});
+
+let attempt;
+
+try {
+ attempt = JSON.parse(
+  localStorage.getItem('refugio:checkout-attempt:v1') || 'null'
+ );
+} catch {
+ attempt = null;
+}
+
+if (!attempt || attempt.signature !== signature || !attempt.key) {
+ attempt = {
+  signature,
+  key: window.crypto.randomUUID(),
+ };
+
+ localStorage.setItem(
+  'refugio:checkout-attempt:v1',
+  JSON.stringify(attempt)
+ );
+}
    this.busy = true;
    try {
     const response = await fetch(destination, {
      method: 'POST', credentials: 'same-origin',
      headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content },
-     body: JSON.stringify({ email: this.email, currency: shop.currency, items }),
+     body: JSON.stringify({
+        email: this.email,
+        currency: shop.currency,
+        items,
+        idempotency_key: attempt.key,
+       }),
     });
     if (response.status === 422) {
      const data = await response.json(); this.feedback = Object.values(data.errors ?? {}).flat().join(' ') || 'El servidor rechazó los datos.'; return;
     }
     if (response.status === 419) { this.feedback = 'La sesión caducó. Recarga la página antes de continuar.'; return; }
     if (!response.ok) { const data = await response.json().catch(() => ({})); throw new Error(data.message || 'El servidor no pudo procesar la solicitud.'); }
-    this.feedback = 'Solicitud recibida por el servidor. El pago todavía no está confirmado.';
+    const data = await response.json();
+
+    if (!data.checkout_url) {
+     throw new Error('El servidor no devolvió la URL de pago.');
+    }
+    
+    const checkoutUrl = new URL(data.checkout_url);
+    
+    if (
+     checkoutUrl.protocol !== 'https:' ||
+     checkoutUrl.hostname !== 'checkout.stripe.com'
+    ) {
+     throw new Error('La dirección de pago recibida no es válida.');
+    }
+    
+    window.location.assign(checkoutUrl.href);
    } catch (error) { this.feedback = error.message || 'No fue posible enviar la solicitud.'; }
    finally { this.busy = false; }
   },

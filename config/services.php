@@ -28,6 +28,16 @@ return [
         'key' => env('RESEND_KEY'),
     ],
 
+    'banxico' => [
+        'base_url' => env(
+            'BANXICO_API_URL',
+            'https://www.banxico.org.mx/SieAPIRest/service/v1'
+        ),
+        'token' => env('BANXICO_TOKEN'),
+        'fix_series' => env('BANXICO_FIX_SERIES', 'SF43718'),
+        'cache_ttl' => (int) env('BANXICO_CACHE_TTL', 1800),
+    ],
+
     'slack' => [
         'notifications' => [
             'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),

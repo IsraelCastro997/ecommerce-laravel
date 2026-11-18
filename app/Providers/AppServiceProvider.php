@@ -4,6 +4,9 @@ namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
 use Laravel\Cashier\Cashier;
+use App\Payments\StripeWebhookHandler;
+use Illuminate\Support\Facades\Event;
+use Laravel\Cashier\Events\WebhookReceived;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -23,6 +26,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        
+        Event::listen(
+            WebhookReceived::class,
+            [StripeWebhookHandler::class, 'handle'],
+        );   
     }
 }
