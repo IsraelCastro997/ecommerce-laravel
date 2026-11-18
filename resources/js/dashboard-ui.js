@@ -1,25 +1,51 @@
 import DataTable from 'datatables.net-dt';
 import 'datatables.net-dt/css/dataTables.dataTables.css';
 import '../css/admin-dashboard.css';
-import { dashboardEndpoints, fixture, demoResponse, periodRows } from './dashboard-data.js';
+import { dashboardEndpoints, fixture, demoResponse } from './dashboard-data.js';
 
 const money = value => new Intl.NumberFormat('es-MX', {
  style: 'currency', currency: 'MXN', currencyDisplay: 'code', maximumFractionDigits: 0,
 }).format(value);
 
 document.addEventListener('alpine:init', () => {
- window.Alpine.data('refugioAnalytics', () => ({
-  from: '2026-11-11', until: '2026-11-17', metric: 'sales', money,
-  get days() { return periodRows(this.from, this.until); },
-  get invalid() { return this.from && this.until && this.from > this.until; },
-  get sales() { return this.days.reduce((sum, row) => sum + row.sales, 0); },
-  get profit() { return this.days.reduce((sum, row) => sum + row.profit, 0); },
-  get orders() { return this.days.reduce((sum, row) => sum + row.orders, 0); },
-  get maximum() { return Math.max(1, ...this.days.map(row => row[this.metric])); },
-  top: fixture.top,
-  dayLabel(date) { return new Intl.DateTimeFormat('es-MX', { day: 'numeric', month: 'short' }).format(new Date(date + 'T12:00:00')); },
-  reset() { this.from = '2026-11-11'; this.until = '2026-11-17'; },
- }));
+ const dateInput = date => new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+ window.Alpine.data('refugioAnalytics', (mode = 'overview') => {
+  let controller;
+  let active = true;
+  return {
+   from: dateInput(new Date(Date.now() - 29 * 86400000)), until: dateInput(new Date()),
+   currency: 'MXN', metric: 'sales', rawSales: [], summary: {}, top: [], loading: false, error: '',
+   init() { this.refresh(); },
+   money(value) { return new Intl.NumberFormat('es-MX', { style:'currency',currency:this.currency,currencyDisplay:'code' }).format(value); },
+   get invalid() { return this.from && this.until && this.from > this.until; },
+   get days() { return this.rawSales.filter(row => row.currency === this.currency).map(row => ({ date: row.sale_date, sales:Number(row.total), orders:Number(row.orders), profit:null })); },
+   get sales() { return this.days.reduce((sum,row)=>sum+row.sales,0); },
+   get orders() { return this.days.reduce((sum,row)=>sum+row.orders,0); },
+   get maximum() { return Math.max(1,...this.days.map(row=>row.sales)); },
+   dayLabel(date) { return new Intl.DateTimeFormat('es-MX',{day:'numeric',month:'short'}).format(new Date(date+'T12:00:00')); },
+   reset() { this.from=dateInput(new Date(Date.now()-29*86400000));this.until=dateInput(new Date());this.refresh(); },
+   async refresh() {
+    if(this.invalid) return;
+    controller?.abort();controller=new window.AbortController();
+    const signal=controller.signal;
+    this.loading=true;this.error='';
+    const params=new URLSearchParams({from:this.from,until:this.until,currency:this.currency});
+    const get=async path=>{
+     const response=await fetch('/admin/dashboard/'+path+'?'+params,{credentials:'same-origin',headers:{Accept:'application/json'},signal});
+     if(!response.ok) {const error=await response.json().catch(()=>({}));throw new Error(Object.values(error.errors??{}).flat().join(' ')||'No se pudo cargar el reporte. Revisa tu sesión e intenta de nuevo.');}
+     return (await response.json()).data;
+    };
+    try {
+     const [top,summary,sales]=await Promise.all([get('top-products'),mode==='top'?null:get('summary'),mode==='top'?null:get('sales')]);
+     if(!active||signal.aborted)return;
+     this.top=top.map(product=>({id:product.product_id,name:product.name,units:Number(product.units_sold)}));
+     if(mode!=='top'){this.summary=summary;this.rawSales=sales;}
+    }catch(error){if(active&&error.name!=='AbortError'){this.error=error.message;this.top=[];this.rawSales=[];}}
+    finally{if(active&&!signal.aborted)this.loading=false;}
+   },
+   destroy(){active=false;controller?.abort();},
+  };
+ });
 
  window.Alpine.data('refugioDataTable', (kind = 'products') => {
   // Keep the library instance outside Alpine's reactive proxy.

@@ -68,5 +68,5 @@ Route::middleware(['auth', 'can:access-admin'])
         Route::get('/dashboard/orders', [DashboardController::class, 'orders'])->name('dashboard.orders');
         Route::get('/dashboard/summary',[DashboardController::class,'summary'])->name('dashboard.summary');
         Route::get('/dashboard/sales',[DashboardController::class,'sales'])->name('dashboard.sales');
-        Route::get('/dashboard/top-products',[DashboardController::class])->name('dashboard.top-products');
+        Route::get('/dashboard/top-products',[DashboardController::class, 'topProducts'])->name('dashboard.top-products');
         });
