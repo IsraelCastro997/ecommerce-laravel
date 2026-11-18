@@ -23,7 +23,7 @@ class CatalogController extends Controller
 
         $products = $this->catalog->search($filters);
 
-        return response()->json([
+        return $this->catalogResponse([
             'data' => $products->getCollection()
                 ->map(
                     fn ($product) => $this->catalog->toDto($product)
@@ -46,17 +46,25 @@ class CatalogController extends Controller
     }
 
     public function show(
-        Product $product
+        Request $request,
+        string $product
     ): JsonResponse {
-        $result = $this->catalog->findPublicProduct(
-            $product->id
-        );
+        // Avoid implicit model binding: SELECT * would read descriptions before Redis.
+        if ($request->route()->bindingFieldFor('product') === 'slug') {
+            $id = Product::query()->where('slug', $product)->value('id');
+            abort_if($id === null, 404);
+        } else {
+            abort_unless(ctype_digit($product), 404);
+            $id = (int) $product;
+        }
+
+        $result = $this->catalog->findPublicProduct((int) $id);
 
         if ($result === null) {
             abort(404);
         }
 
-        return response()->json([
+        return $this->catalogResponse([
             'data' => $this->catalog->toDto($result),
         ]);
     }
@@ -68,7 +76,7 @@ class CatalogController extends Controller
             $request->validated('product_ids')
         );
 
-        return response()->json([
+        return $this->catalogResponse([
             'data' => $products
                 ->map(
                     fn ($product) => $this->catalog->toDto($product)
@@ -76,5 +84,16 @@ class CatalogController extends Controller
                 ->values()
                 ->all(),
         ]);
+    }
+
+    private function catalogResponse(array $data): JsonResponse
+    {
+        $response = response()->json($data);
+
+        if (request()->attributes->get('catalog_descriptions_from_redis') === true) {
+            $response->headers->set('X-Descriptions-Source', 'redis');
+        }
+
+        return $response;
     }
 }

@@ -17,6 +17,8 @@ class ProductDescriptionCache
 
     public function hydrate(Collection $products): void
     {
+        request()->attributes->set('catalog_descriptions_from_redis', false);
+
         if ($products->isEmpty()) {
             return;
         }
@@ -26,6 +28,8 @@ class ProductDescriptionCache
         $cache = Cache::store('redis');
         $values = $cache->many($keys);
         $missing = $products->filter(fn (Product $product) => ! is_array($values[self::key($product->id)] ?? null));
+
+        request()->attributes->set('catalog_descriptions_from_redis', $missing->isEmpty());
 
         if ($missing->isNotEmpty()) {
             $rows = Product::query()->whereKey($missing->modelKeys())
