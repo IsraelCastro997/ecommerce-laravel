@@ -12,6 +12,21 @@ class Product extends Model
 {
     use SoftDeletes;
 
+    protected static function booted(): void
+    {
+        $invalidate = static function (Product $product): void {
+            $id = (int) $product->getKey();
+            // Run after commit so a concurrent read cannot refill from uncommitted data.
+            $product->getConnection()->afterCommit(
+                static fn () => \App\Services\Catalog\ProductDescriptionCache::forget($id)
+            );
+        };
+
+        static::saved($invalidate);
+        static::deleted($invalidate);
+        static::restored($invalidate);
+    }
+
     protected $fillable = [
         'sku',
         'slug',

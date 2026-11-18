@@ -3,7 +3,7 @@
 namespace App\Services;
 
 use Carbon\CarbonImmutable;
-// use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Cache;
 use RuntimeException;
 use Xint0\BanxicoPHP\SieClient;
 
@@ -11,13 +11,11 @@ class ExchangeRateService
 {
     public function latestUsdMxn(): array
     {
-        // return Cache::store('redis')->remember(
-        //     'banxico:fix:usd-mxn',
-        //     (int) config('services.banxico.cache_ttl', 1800),
-        //     fn (): array => $this->fetchLatestUsdMxn()
-        // );
-
-        return $this->fetchLatestUsdMxn();
+        return Cache::store('redis')->remember(
+            'banxico:fix:usd-mxn',
+            (int) config('services.banxico.cache_ttl', 1800),
+            fn (): array => $this->fetchLatestUsdMxn()
+        );
     }
 
     private function fetchLatestUsdMxn(): array
@@ -73,10 +71,8 @@ class ExchangeRateService
         ];
     }
 
-    // public function clearLatestCache(): void
-    // {
-    //     Cache::store('redis')->forget(
-    //         'banxico:fix:usd-mxn'
-    //     );
-    // }
+    public function clearLatestCache(): void
+    {
+        Cache::store('redis')->forget('banxico:fix:usd-mxn');
+    }
 }

@@ -56,6 +56,11 @@ class CatalogQueryService
     {
         return $this->visibleProducts(
             Product::query()
+                ->select([
+                    'products.id', 'sku', 'slug', 'name', 'image_url',
+                    'brand_id', 'primary_category_id', 'origin_country',
+                    'status', 'available_from', 'available_until',
+                ])
                 ->with([
                     'brand:id,name,slug',
                     'primaryCategory:id,name,slug',
@@ -207,9 +212,12 @@ class CatalogQueryService
             $query->orderBy('id');
         }
 
-        return $query->paginate(
+        $page = $query->paginate(
             min(100, max(1, (int) ($filters['per_page'] ?? 24)))
         );
+        app(ProductDescriptionCache::class)->hydrate($page->getCollection());
+
+        return $page;
     }
 
     /**
@@ -217,9 +225,15 @@ class CatalogQueryService
      */
     public function findPublicProduct(int $id): ?Product
     {
-        return $this->query()
+        $product = $this->query()
             ->whereKey($id)
             ->first();
+
+        if ($product) {
+            app(ProductDescriptionCache::class)->hydrate(new \Illuminate\Database\Eloquent\Collection([$product]));
+        }
+
+        return $product;
     }
 
     /**
@@ -227,9 +241,12 @@ class CatalogQueryService
      */
     public function findByIds(array $ids): Collection
     {
-        return $this->query()
+        $products = $this->query()
             ->whereKey($ids)
             ->get();
+        app(ProductDescriptionCache::class)->hydrate($products);
+
+        return $products;
     }
 
     /**
