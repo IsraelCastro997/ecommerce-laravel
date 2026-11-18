@@ -18,7 +18,7 @@ class AdminProductCrudTest extends TestCase
  private function data(): array {return ['sku'=>'TEST-CRUD','slug'=>'test-crud','name'=>'Mochila de prueba','status'=>'draft','origin_country'=>'MX','price_mxn'=>'100.00','price_usd'=>'5.00','stock'=>10,'image_url'=>'https://example.test/product.jpg','short_description'=>'Descripcion breve','long_description'=>'Descripcion completa','available_until'=>'2027-12-01'];}
  public function test_create_edit_list_and_soft_delete(): void {
   $this->actingAs($this->admin());
-  $this->get('/admin/products')->assertOk()->assertSee('Busca productos');
+  $this->get('/admin/products')->assertOk()->assertSee('Precio USD');
   $this->get('/admin/products/create')->assertOk()->assertSee('Guardar producto');
   $this->post('/admin/products',$this->data()+['version'=>999])->assertSessionHasNoErrors()->assertRedirect();
   $product=Product::where('sku','TEST-CRUD')->firstOrFail();

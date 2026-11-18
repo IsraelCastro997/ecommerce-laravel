@@ -5,7 +5,7 @@
    <header class="ro-hero"><div><span class="ro-demo">Administración</span><h1>Categorías</h1><p>Organiza y consulta las categorías reales del catálogo.</p></div></header>
    <section class="ro-panel">
     <div class="ro-filters">
-     <label>Buscar categoría<input type="search" wire:model.blur="search" x-on:keydown.enter.prevent="$event.target.blur()" maxlength="150" placeholder="Nombre o slug"></label>
+     <label>Buscar categoría<input type="search" wire:model.blur.live="search" x-on:keydown.enter.prevent="$event.target.blur()" maxlength="150" placeholder="Nombre o slug"></label>
      <label>Estado<select wire:model.live="status"><option value="">Todos los estados</option><option value="active">Activas</option><option value="inactive">Inactivas</option></select></label>
      <label>Categoría superior<select wire:model.live="parent"><option value="">Todas</option><option value="root">Sin categoría superior</option>@foreach($parents as $option)<option value="{{ $option->id }}">{{ $option->name }}</option>@endforeach</select></label>
      <button class="ro-button" type="button" wire:click="clearFilters">Limpiar filtros</button>

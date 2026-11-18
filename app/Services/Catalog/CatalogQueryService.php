@@ -40,6 +40,8 @@ class CatalogQueryService
     {
         return $query
             ->where('status', 'active')
+            ->where(fn (Builder $q) => $q->whereNull('available_from')->orWhere('available_from', '<=', now()))
+            ->where(fn (Builder $q) => $q->whereNull('available_until')->orWhere('available_until', '>=', now()))
             ->whereHas(
                 'priceSnapshots',
                 fn (Builder $snapshot) =>

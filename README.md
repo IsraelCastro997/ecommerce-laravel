@@ -213,38 +213,14 @@ php artisan permission:assign-role customer ID_USUARIO web
 
 `admin` tiene `access-admin`; `customer` no. Spatie resuelve ese permiso mediante `HasRoles` y el middleware `can:access-admin`. No quitar la protección para evitar un 403. [Comandos oficiales de Spatie](https://spatie.be/docs/laravel-permission/v8/basic-usage/artisan).
 
-## Stripe en sandbox
-
-Configurar las claves del **mismo sandbox**, sin utilizar claves live:
-
-```dotenv
-STRIPE_KEY=pk_test_REEMPLAZAR
-STRIPE_SECRET=sk_test_REEMPLAZAR
-STRIPE_WEBHOOK_SECRET=whsec_REEMPLAZAR
-CASHIER_CURRENCY=mxn
-CASHIER_CURRENCY_LOCALE=es_MX
-CASHIER_LOGGER=stack
-```
-
-Con Stripe CLI instalada, ejecutar en otra terminal y autenticar el sandbox correspondiente:
-
-```powershell
-stripe login
-stripe listen --events checkout.session.completed,checkout.session.expired --forward-to http://localhost:8000/stripe/webhook
-```
-
-Mantener el listener abierto y copiar su secreto `whsec_...` a `STRIPE_WEBHOOK_SECRET`. Puede diferir del secreto de un endpoint del Dashboard de Stripe. Después:
-
-```powershell
-php artisan config:clear
-```
-
-Cashier ya registra `/stripe/webhook`. No duplicar la ruta ni quitar CSRF de toda la aplicación. El formulario de checkout sí utiliza la sesión y CSRF de Laravel.
-
-El formulario actual genera un pre-pedido pendiente y devuelve su folio; no inicia Stripe ni simula cobros. La implementación previa de pago se conserva separada, sin invocarse desde esta acción.
-
-El controlador y webhook están implementados, pero esta documentación no acredita una compra completada. La bolsa sigue siendo local y necesita resolver artículos de otras páginas/persistencia completa para que cualquier recorrido funcione. [Stripe CLI](https://docs.stripe.com/cli) y [confirmación de pagos](https://docs.stripe.com/checkout/fulfillment).
-
+## Stripe y Redis: configuración local, otra PC y deploy
+
+Consultar [Stripe y Redis en otra PC](docs/STRIPE_REDIS_OTRA_PC.md) para instalar Stripe CLI, obtener claves sandbox y el secreto del webhook, probar pagos, instalar Redis y activar manualmente la caché Banxico cuando el servicio esté disponible.
+
+El checkout genera el pre-pedido y después ofrece **Pagar con Stripe**. Los precios y el IVA se calculan en Laravel. La sesión de Stripe se reutiliza y el webhook firmado confirma el pago y actualiza el inventario. La bolsa recupera sus artículos por IDs, independientemente de la página del catálogo.
+
+Stripe CLI se utiliza para reenviar eventos a localhost durante las pruebas. En un servidor público se registra `https://tu-dominio.com/stripe/webhook` en Stripe y se usa el secreto de ese endpoint, sin ejecutar CLI en producción. Redis continúa deshabilitado en el servicio Banxico hasta completar los pasos de la guía.
+
 ## Rutas principales
 
 Todas bajo `http://localhost:8000`:
@@ -255,7 +231,7 @@ Todas bajo `http://localhost:8000`:
 | `/catalogo` | Catálogo, búsqueda, filtros y paginación públicos |
 | `/storefront/products?page=1` | Página JSON de productos |
 | `/storefront/filters` | Categorías, marcas y monedas |
-| `/productos/{product}` | Vista pública; detalle independiente aún por completar |
+| `/productos/{product}` | Detalle público por ID, con descripciones y precios en ambas monedas |
 | `/login`, `/register` | Acceso y registro para invitados |
 | `/dashboard`, `/cuenta` | Cuenta autenticada; `/dashboard` declara además `verified` |
 | `/carrito` | Bolsa local pública |

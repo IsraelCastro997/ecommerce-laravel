@@ -22,6 +22,8 @@ export function estimate(products, quantities, currency) {
 
 export function checkoutItems(products, quantities) {
     const selected = products.filter(product => (quantities[product.id] ?? 0) > 0);
+    const requested = Object.keys(quantities).filter(id => quantities[id] > 0);
+    if (requested.some(id => !selected.some(product => product.id === id))) throw new Error('Faltan productos por recuperar de la bolsa. Vuelve a intentarlo.');
     if (selected.length === 0) throw new Error('Agrega un producto antes de continuar.');
     const seen = new Set();
     return selected.map(product => {
@@ -32,4 +34,14 @@ export function checkoutItems(products, quantities) {
         if (!Number.isInteger(quantity) || quantity < 1 || quantity > 99) throw new Error('Cantidad inválida.');
         return { product_id: product.product_id, quantity };
     });
+}
+
+export function stockLimit(product) {
+    const stock = product?.available_quantity;
+    return Number.isSafeInteger(stock) && stock > 0 ? Math.min(99, stock) : 0;
+}
+
+export function nextCartQuantity(product, current, delta) {
+    if (!Number.isInteger(current) || current < 0 || !Number.isInteger(delta)) throw new Error('Cantidad inválida.');
+    return Math.max(0, Math.min(stockLimit(product), current + delta));
 }

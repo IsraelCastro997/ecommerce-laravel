@@ -1,1 +1,1 @@
-<x-site-layout title="Regreso del pago"><x-checkout-result :cancelled="true" /></x-site-layout>
+<x-site-layout title="Regreso del pago">@if($order)<p class="store-wrap mt-5">Saliste de la pantalla de Stripe. Tu pedido conserva el estado confirmado por el servidor.</p><livewire:store.order-confirmation :order="$order" />@else<x-checkout-result :cancelled="true" />@endif</x-site-layout>

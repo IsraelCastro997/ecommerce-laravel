@@ -2,7 +2,7 @@ import { externalProductImage } from './catalog-presentation.js';
 import './dashboard-ui.js';
 import './product-form.js';
 import './google-sign-in.js';
-import { estimate, checkoutItems } from './checkout-presentation.js';
+import { estimate, checkoutItems, stockLimit, nextCartQuantity } from './checkout-presentation.js';
 
 import '../css/fonts.css';
 import '../css/app.css';
@@ -63,7 +63,7 @@ function restoreQuantities() {
    return Object.fromEntries(
       Object.entries(cart)
          .filter(([id, quantity]) => /^\d+$/.test(id) && Number.isInteger(quantity) && quantity > 0)
-         .map(([id, quantity]) => [id, Math.min(9, quantity)])
+         .map(([id, quantity]) => [id, Math.min(99, quantity)])
    );
 }
 
@@ -108,6 +108,7 @@ document.addEventListener('alpine:init', () => {
    Alpine.store('shop', {
       currency,
       products: [],
+      cartProducts: [], cartLoading: false, cartError: '',
       quantities: restoreQuantities(),
       notice: '',
       loading: false,
@@ -186,14 +187,31 @@ document.addEventListener('alpine:init', () => {
          return Object.values(this.quantities).reduce((sum, n) => sum + n, 0);
       },
 
+      async loadCart() {
+         this.cartLoading=true;this.cartError='';
+         try {
+            const ids=Object.keys(this.quantities).filter(id=>this.quantities[id]>0).map(Number);
+            if(!ids.length){this.cartProducts=[];return;}
+            if(ids.length>50)throw new Error('La bolsa admite hasta 50 productos diferentes.');
+            const response=await fetch('/storefront/products/loockup',{
+               method:'POST',credentials:'same-origin',
+               headers:{Accept:'application/json','Content-Type':'application/json','X-CSRF-TOKEN':document.querySelector('meta[name="csrf-token"]').content},
+               body:JSON.stringify({product_ids:ids}),
+            });
+            const data=await response.json();
+            if(!response.ok)throw new Error(Object.values(data.errors??{}).flat().join(' ')||'No se pudo recuperar la bolsa.');
+            this.cartProducts=data.data.map(normalizeProduct);
+            this.validateCart();
+         }catch(error){this.cartError=error.message;}
+         finally{this.cartLoading=false;}
+      },
       get items() {
-         // Este carrito solo puede mostrar los productos cargados en la página actual.
-         // La persistencia completa entre páginas requiere Cart/CartItem o un endpoint por IDs.
-         return this.products.filter(product => this.quantities[product.id]);
+         const products=new Map([...this.cartProducts,...this.products].map(product=>[product.id,product]));
+         return [...products.values()].filter(product=>this.quantities[product.id]);
       },
 
       get totals() {
-         return estimate(this.products, this.quantities, this.currency);
+         return estimate(this.items, this.quantities, this.currency);
       },
 
       get total() {
@@ -201,7 +219,7 @@ document.addEventListener('alpine:init', () => {
       },
 
       estimateFor(currencyCode) {
-         return estimate(this.products, this.quantities, currencyCode);
+         return estimate(this.items, this.quantities, currencyCode);
       },
 
       price(amount, currencyCode = this.currency) {
@@ -221,21 +239,28 @@ document.addEventListener('alpine:init', () => {
          }
       },
 
+      limit(product){return stockLimit(product);},
+      validateCart(){
+         const ids=Object.keys(this.quantities).filter(id=>this.quantities[id]>0);
+         const missing=ids.some(id=>!this.items.some(product=>product.id===id));
+         const exceeded=this.items.some(product=>this.quantities[product.id]>stockLimit(product));
+         this.cartError=missing?'Hay productos no disponibles. Revisa la bolsa.':exceeded?'La cantidad de un producto supera el stock disponible. Reduce la cantidad antes de continuar.':'';
+      },
       change(id, delta) {
          const productId = String(id);
-         const product = this.products.find(p => p.id === productId && p.available);
+         if(delta === 'remove'){const next={...this.quantities};delete next[productId];this.quantities=next;save(CART_KEY,next);this.validateCart();return;}
+         const product = [...this.products,...this.cartProducts].find(p => p.id === productId);
          if (!product) return;
 
          const next = { ...this.quantities };
-         const quantity = delta === 'remove'
-            ? 0
-            : Math.max(0, Math.min(9, (next[productId] ?? 0) + delta));
+         const quantity = nextCartQuantity(product, next[productId] ?? 0, delta);
 
          if (quantity) next[productId] = quantity;
          else delete next[productId];
 
          this.quantities = next;
          save(CART_KEY, next);
+         this.validateCart();
          this.notice = quantity
             ? `${product.name}: ${quantity} en la bolsa de demostración.`
             : 'Artículo retirado de la bolsa de demostración.';
@@ -243,13 +268,32 @@ document.addEventListener('alpine:init', () => {
 
       clear() {
          this.quantities = {};
+         this.cartError='';
          save(CART_KEY, {});
          this.notice = 'Bolsa de demostración vaciada.';
       },
    });
 
-   Alpine.data('checkoutPreview', (endpoint = '') => ({
+   Alpine.data('checkoutPreview', (endpoint = '', userId = null) => ({
       endpoint,
+      userId, order: null, paymentBusy: false,
+      init(){
+         const attempt=read('refugio:checkout-attempt:v1',null);
+         if(attempt?.userId===this.userId && attempt.order?.id) this.order=attempt.order;
+      },
+      async pay(){
+         if(this.paymentBusy || !this.order || this.order.status!=='pending_payment') return;
+         this.paymentBusy=true;this.feedback='';
+         try{
+            const response=await fetch('/checkout/'+Number(this.order.id)+'/payment',{method:'POST',credentials:'same-origin',headers:{Accept:'application/json','X-CSRF-TOKEN':document.querySelector('meta[name="csrf-token"]').content}});
+            const data=await response.json();
+            if(!response.ok)throw new Error(data.message||'No se pudo iniciar el pago.');
+            const url=new URL(data.checkout_url);
+            if(url.protocol!=='https:' || url.hostname!=='checkout.stripe.com') throw new Error('Stripe devolvio una URL de pago inesperada.');
+            window.location.assign(url.href);
+         }catch(error){this.feedback=error.message;this.paymentBusy=false;}
+      },
+      newOrder(){if(this.paymentBusy)return;this.order=null;this.feedback='';save('refugio:checkout-attempt:v1',null);},
       email: '',
       feedback: '',
       busy: false,
@@ -263,12 +307,15 @@ document.addEventListener('alpine:init', () => {
       },
 
       async prepare() {
+         if(this.busy || this.order)return;
          this.feedback = '';
          const shop = Alpine.store('shop');
          let items;
 
          try {
-            items = checkoutItems(shop.products, shop.quantities);
+            if(shop.cartLoading)throw new Error('Espera a que termine de cargar la bolsa.');
+            if(shop.cartError)throw new Error(shop.cartError);
+            items = checkoutItems(shop.items, shop.quantities);
          } catch (error) {
             this.feedback = error.message;
             return;
@@ -345,8 +392,11 @@ document.addEventListener('alpine:init', () => {
             }
 
             const data = await response.json();
-            if (!data.data?.order_number) throw new Error('El servidor no devolvi� el folio del pre-pedido.');
-            this.feedback = `Pre-pedido ${data.data.order_number} creado. Estado: pendiente. Total: ${shop.price(Number(data.data.grand_total), data.data.currency)}. No se realiz� ning�n pago.`;
+            if (!data.data?.order_number || !data.data?.id) throw new Error('El servidor no devolvio el pre-pedido.');
+            this.order={id:data.data.id,order_number:data.data.order_number,status:data.data.status,currency:data.data.currency,grand_total:data.data.grand_total};
+            attempt.order=this.order;attempt.userId=this.userId;
+            save('refugio:checkout-attempt:v1',attempt);
+            this.feedback='Pre-pedido '+this.order.order_number+' creado. Puedes continuar al pago con Stripe.';
          } catch (error) {
             this.feedback = error.message || 'No fue posible enviar la solicitud.';
          } finally {

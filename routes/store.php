@@ -38,12 +38,14 @@ Route::name('store.')->group(function () {
 
 
     Route::middleware('auth')->group(function () {
-        Route::view('/checkout/success', 'checkout.success')
+        Route::get('/checkout/success', [CheckoutController::class,'result'])
             ->name('checkout.success');
 
-        Route::view('/checkout/cancel', 'checkout.cancel')
+        Route::get('/checkout/cancel', [CheckoutController::class,'cancelled'])
             ->name('checkout.cancel');
 
+        Route::post('/checkout/{order}/payment', [CheckoutController::class,'payment'])->middleware('throttle:20,1')->name('checkout.payment');
+        Route::get('/checkout/{order}/status', [CheckoutController::class,'status'])->name('checkout.status');
         Route::livewire('/checkout', Checkout::class)
             ->name('checkout');
 

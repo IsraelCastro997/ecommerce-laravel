@@ -15,6 +15,7 @@ class StripeWebhookHandler
 
         if (!in_array($payload['type'] ?? '', [
             'checkout.session.completed',
+            'checkout.session.async_payment_succeeded',
             'checkout.session.expired',
         ], true)) {
             return;
@@ -62,7 +63,8 @@ class StripeWebhookHandler
             }
 
             if (
-                strtoupper($session->currency) !== $order->currency
+                (string)$session->client_reference_id !== (string)$order->id
+                || strtoupper($session->currency) !== $order->currency
                 || (string) $session->amount_total !== bcmul(
                     (string) $order->grand_total,
                     '100',

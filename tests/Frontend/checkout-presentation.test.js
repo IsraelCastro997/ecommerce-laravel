@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { cents, estimate, checkoutItems } from '../../resources/js/checkout-presentation.js';
+import { cents, estimate, checkoutItems, stockLimit, nextCartQuantity } from '../../resources/js/checkout-presentation.js';
 
 const products = [{ id: 'sku-demo', product_id: 42, prices: { MXN: '19.99', USD: '1.10' } }];
 
@@ -23,4 +23,18 @@ test('rechaza cantidades, importes e IDs fuera del contrato', () => {
     assert.throws(() => checkoutItems([...products, { ...products[0], id: 'other' }], { 'sku-demo': 1, other: 1 }), /duplicado/);
     assert.throws(() => cents('0.001'), /inválido/);
     assert.throws(() => estimate(products, {}, 'EUR'), /Moneda/);
+});
+
+test('no envia un pedido parcial si falta un producto de otra pagina', () => {
+ assert.throws(() => checkoutItems(products, {'sku-demo':1, 'another-page':2}), /Faltan productos/);
+});
+
+test('limita cantidades a stock disponible y permite reducir y eliminar', () => {
+ const product={available_quantity:3};
+ assert.equal(stockLimit(product),3);
+ assert.equal(nextCartQuantity(product,2,5),3);
+ assert.equal(nextCartQuantity(product,3,1),3);
+ assert.equal(nextCartQuantity(product,3,-1),2);
+ assert.equal(nextCartQuantity({available_quantity:0},3,-1),0);
+ assert.equal(stockLimit({available_quantity:200}),99);
 });

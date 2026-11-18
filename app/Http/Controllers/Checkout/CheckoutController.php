@@ -246,105 +246,132 @@ class CheckoutController extends Controller
     public function payment(Request $request, Order $order): JsonResponse
     {
         abort_unless((int) $order->user_id === (int) $request->user()->id, 403);
-        if ($order->status === 'paid') {
-            return response()->json([
-                'message' => 'Este pedido ya está pagado.',
-            ], 409);
+        if (!config('cashier.secret') || !config('cashier.webhook.secret')) {
+            return response()->json(['message'=>'Configura STRIPE_SECRET y STRIPE_WEBHOOK_SECRET para habilitar el pago.'],503);
         }
-
-        abort_unless(
-            $order->status === 'pending_payment',
-            409,
-            'Este pedido ya no admite pagos.',
-        );
-
-        try {
-            $payment = DB::table('payment_transactions')
-                ->where('order_id', $order->id)
-                ->whereNotNull('stripe_checkout_session_id')
-                ->first();
-
-            if ($payment) {
-                $session = Cashier::stripe()->checkout->sessions->retrieve(
-                    $payment->stripe_checkout_session_id,
-                    [],
-                );
-            } else {
-                // Una expiración estable permite reintentos idempotentes.
-                $expiresAt = $order->created_at->copy()->addDay()->timestamp;
-
-                abort_if(
-                    $expiresAt < now()->addMinutes(31)->timestamp,
-                    409,
-                    'El intento requiere reconciliación antes de volver a pagar.',
-                );
-
-                $session = Cashier::stripe()->checkout->sessions->create([
-                    'mode' => 'payment',
-                    'payment_method_types' => ['card'],
-                    'customer_email' => $order->customer_email,
-                    'client_reference_id' => (string) $order->id,
-                    'expires_at' => $expiresAt,
-
-                    // Aquí va automatic_tax, dentro de las opciones de Checkout.
-                    'automatic_tax' => ['enabled' => false],
-
-                    'line_items' => [[
-                        'quantity' => 1,
-                        'price_data' => [
-                            'currency' => strtolower($order->currency),
-                            'unit_amount' => (int) bcmul(
-                                $order->grand_total,
-                                '100',
-                                0,
-                            ),
-                            'product_data' => [
-                                'name' => 'Pedido '.$order->order_number.' — IVA incluido',
-                            ],
-                        ],
-                    ]],
-
-                    'metadata' => [
-                        'order_id' => (string) $order->id,
-                    ],
-                    'success_url' => route('store.checkout.success')
-                        .'?session_id={CHECKOUT_SESSION_ID}',
-                    'cancel_url' => route('store.checkout.cancel'),
-                ], [
-                    'idempotency_key' => $order->idempotency_key,
-                ]);
-
-                // El índice único de la sesión evita duplicados en reintentos.
-                DB::table('payment_transactions')->upsert([[
-                    'order_id' => $order->id,
-                    'provider' => 'stripe',
-                    'status' => 'pending',
-                    'stripe_checkout_session_id' => $session->id,
-                    'currency' => $order->currency,
-                    'amount' => $order->grand_total,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]], ['stripe_checkout_session_id'], ['updated_at']);
+        return DB::transaction(function () use ($order) {
+            $order = Order::whereKey($order->id)->lockForUpdate()->firstOrFail();
+            if ($order->status === 'paid') {
+                return response()->json([
+                    'message' => 'Este pedido ya está pagado.',
+                ], 409);
             }
-        } catch (ApiErrorException $exception) {
-            report($exception);
 
-            // Un error de red no demuestra que Stripe no haya creado la sesión.
-            // Se conserva el pedido y su clave para reintentar sin duplicarlo.
+            abort_unless(
+                $order->status === 'pending_payment',
+                409,
+                'Este pedido ya no admite pagos.',
+            );
+
+            try {
+                $payment = DB::table('payment_transactions')
+                    ->where('order_id', $order->id)
+                    ->whereNotNull('stripe_checkout_session_id')
+                    ->first();
+
+                if ($payment) {
+                    $session = Cashier::stripe()->checkout->sessions->retrieve(
+                        $payment->stripe_checkout_session_id,
+                        [],
+                    );
+                } else {
+                    // Una expiración estable permite reintentos idempotentes.
+                    $expiresAt = $order->created_at->copy()->addDay()->timestamp;
+
+                    abort_if(
+                        $expiresAt < now()->addMinutes(31)->timestamp,
+                        409,
+                        'El intento requiere reconciliación antes de volver a pagar.',
+                    );
+
+                    $session = Cashier::stripe()->checkout->sessions->create([
+                        'mode' => 'payment',
+                        'payment_method_types' => ['card'],
+                        'customer_email' => $order->customer_email,
+                        'client_reference_id' => (string) $order->id,
+                        'expires_at' => $expiresAt,
+
+                        // Aquí va automatic_tax, dentro de las opciones de Checkout.
+                        'automatic_tax' => ['enabled' => false],
+
+                        'line_items' => [[
+                            'quantity' => 1,
+                            'price_data' => [
+                                'currency' => strtolower($order->currency),
+                                'unit_amount' => (int) bcmul(
+                                    $order->grand_total,
+                                    '100',
+                                    0,
+                                ),
+                                'product_data' => [
+                                    'name' => 'Pedido '.$order->order_number.' — IVA incluido',
+                                ],
+                            ],
+                        ]],
+
+                        'metadata' => [
+                            'order_id' => (string) $order->id,
+                        ],
+                        'success_url' => route('store.checkout.success')
+                            .'?session_id={CHECKOUT_SESSION_ID}',
+                        'cancel_url' => route('store.checkout.cancel', ['order'=>$order->id]),
+                    ], [
+                        'idempotency_key' => $order->idempotency_key,
+                    ]);
+
+                    // El índice único de la sesión evita duplicados en reintentos.
+                    DB::table('payment_transactions')->upsert([[
+                        'order_id' => $order->id,
+                        'provider' => 'stripe',
+                        'status' => 'pending',
+                        'stripe_checkout_session_id' => $session->id,
+                        'currency' => $order->currency,
+                        'amount' => $order->grand_total,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]], ['stripe_checkout_session_id'], ['updated_at']);
+                }
+            } catch (ApiErrorException $exception) {
+                report($exception);
+
+                // Un error de red no demuestra que Stripe no haya creado la sesión.
+                // Se conserva el pedido y su clave para reintentar sin duplicarlo.
+                return response()->json([
+                    'message' => 'No se pudo abrir Stripe. Reintenta el mismo pago.',
+                ], 503);
+            }
+
+            if ($session->status !== 'open' || !$session->url) {
+                return response()->json([
+                    'message' => 'La sesión terminó. Consulta el estado del pedido.',
+                ], 409);
+            }
+
             return response()->json([
-                'message' => 'No se pudo abrir Stripe. Reintenta el mismo pago.',
-            ], 503);
-        }
+                'checkout_url' => $session->url,
+            ]);
+        },3);
+    }
 
-        if ($session->status !== 'open' || !$session->url) {
-            return response()->json([
-                'message' => 'La sesión terminó. Consulta el estado del pedido.',
-            ], 409);
-        }
+    public function status(Request $request, Order $order): JsonResponse
+    {
+        abort_unless((int)$order->user_id === (int)$request->user()->id,403);
+        return response()->json(['data'=>['id'=>$order->id,'order_number'=>$order->order_number,'status'=>$order->status,'paid_at'=>$order->paid_at,'currency'=>$order->currency,'grand_total'=>$order->grand_total]]);
+    }
 
-        return response()->json([
-            'checkout_url' => $session->url,
-        ]);
+    public function cancelled(Request $request)
+    {
+        $order = null;
+        if ($request->filled('order')) $order=Order::where('user_id',$request->user()->id)->findOrFail($request->query('order'));
+        return view('checkout.cancel',compact('order'));
+    }
+
+    public function result(Request $request)
+    {
+        $sessionId=$request->query('session_id');
+        abort_unless(is_string($sessionId) && strlen($sessionId)<=255,404);
+        $order=Order::where('user_id',$request->user()->id)->whereHas('paymentTransactions',fn($q)=>$q->where('stripe_checkout_session_id',$sessionId))->firstOrFail();
+        return view('checkout.success',compact('order'));
     }
 
     private function decimal(int $cents): string

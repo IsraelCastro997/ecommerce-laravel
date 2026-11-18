@@ -8,6 +8,13 @@ const money = value => new Intl.NumberFormat('es-MX', {
 }).format(value);
 
 document.addEventListener('alpine:init', () => {
+ window.Alpine.data('refugioLivewireTable', () => {
+  let table;
+  return {
+   init(){this.$nextTick(()=>{table=new DataTable(this.$refs.table,{paging:false,searching:false,ordering:false,info:false,layout:{topStart:null,topEnd:null,bottomStart:null,bottomEnd:null},language:{emptyTable:'No hay productos con estos filtros.'}});});},
+   destroy(){table?.destroy();},
+  };
+ });
  window.Alpine.data('refugioOrders', () => {
   let controller;
   return {
