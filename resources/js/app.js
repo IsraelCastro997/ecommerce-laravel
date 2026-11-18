@@ -71,6 +71,7 @@ document.addEventListener('alpine:init', () => {
    const Alpine = window.Alpine;
    let catalogController;
    let catalogRequest = 0;
+   let initialProductsRequest;
 
    Alpine.data('themePicker', () => ({
       theme: 'light',
@@ -114,10 +115,13 @@ document.addEventListener('alpine:init', () => {
       lastPage: 1,
       totalProducts: 0, categories: [], brands: [], filters: {}, filtersError: '',
 
-      init() {
-         // Alpine ejecuta init() al registrar el store.
-         void this.loadProducts();
-         void this.loadFilters();
+      productsLoaded: false,
+      ensureProducts() {
+         if (this.productsLoaded) return Promise.resolve();
+         if (!initialProductsRequest) {
+            initialProductsRequest = this.loadProducts().finally(() => { initialProductsRequest = null; });
+         }
+         return initialProductsRequest;
       },
 
       query: '',
@@ -163,6 +167,7 @@ document.addEventListener('alpine:init', () => {
             const products = payload.data.map(normalizeProduct);
             if (requestId !== catalogRequest) return;
             this.products = products;
+            this.productsLoaded = true;
             this.currentPage = Number(payload.current_page) || 1;
             this.lastPage = Number(payload.last_page) || 1;
             this.totalProducts = Number(payload.total ?? products.length);
@@ -339,18 +344,8 @@ document.addEventListener('alpine:init', () => {
             }
 
             const data = await response.json();
-            if (!data.checkout_url) {
-               throw new Error('El servidor no devolviÃ³ la URL de pago.');
-            }
-
-            const checkoutUrl = new URL(data.checkout_url);
-            if (
-               checkoutUrl.protocol !== 'https:' ||
-               checkoutUrl.hostname !== 'checkout.stripe.com'
-            ) {
-               throw new Error('La direcciÃ³n de pago recibida no es vÃ¡lida.');
-            }
-            window.location.assign(checkoutUrl.href);
+            if (!data.data?.order_number) throw new Error('El servidor no devolvió el folio del pre-pedido.');
+            this.feedback = `Pre-pedido ${data.data.order_number} creado. Estado: pendiente. Total: ${shop.price(Number(data.data.grand_total), data.data.currency)}. No se realizó ningún pago.`;
          } catch (error) {
             this.feedback = error.message || 'No fue posible enviar la solicitud.';
          } finally {
@@ -402,6 +397,8 @@ document.addEventListener('alpine:init', () => {
       },
       get brands() { return Alpine.store('shop').brands; },
       init() {
+         void Alpine.store('shop').ensureProducts();
+         void Alpine.store('shop').loadFilters();
          const group = new URLSearchParams(location.search).get('categoria');
          if (group) {
             const applyCategory = () => {
@@ -466,6 +463,7 @@ document.addEventListener('alpine:init', () => {
    }));
 
    Alpine.data('productPreview', () => ({
+      init() { void Alpine.store('shop').ensureProducts(); },
       get product() {
          const id = decodeURIComponent(location.pathname.split('/').pop());
          return Alpine.store('shop').products.find(p => String(p.id) === id) ?? null;

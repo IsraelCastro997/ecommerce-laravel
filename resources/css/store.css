@@ -554,3 +554,11 @@
     font-size: 0.85rem;
     font-weight: 650;
 }
+
+.store-register-link { font-weight:700; white-space:nowrap; }
+.store-logout { margin:0; flex-shrink:0; }
+.store-logout-button { display:inline-flex; align-items:center; justify-content:center; min-height:40px; padding:.45rem .7rem; border:1px solid var(--line); border-radius:6px; background:transparent; color:var(--ink); font-family:inherit; font-size:.8rem; white-space:nowrap; cursor:pointer; }
+.store-logout-button:hover { background:var(--card); border-color:#82957b; }
+.store-logout-button:focus-visible { outline:2px solid #9c671e; outline-offset:3px; }
+@media(max-width:700px) { .store-actions { max-width:100%; flex-wrap:wrap; } }
+@media(max-width:900px) { .store-actions .store-register-link { display:none; } }

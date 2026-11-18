@@ -23,12 +23,19 @@
             <div class="store-actions" x-data>
                 <select aria-label="Moneda" :value="$store.shop.currency" @change="$store.shop.setCurrency($event.target.value)"><option>MXN</option><option>USD</option></select>
                 <a href="{{ auth()->check() ? route('dashboard') : route('login') }}">{{ auth()->check() ? 'Mi cuenta' : 'Ingresar' }}</a>
+                @guest<a class="store-register-link" href="{{ route('register') }}">Crear cuenta</a>@endguest
                 <a class="icon-button bag-button" href="{{ route('store.cart') }}" aria-label="Ver carrito"><x-store-icon name="bag" size="21" /> Bolsa <span x-text="$store.shop.count">0</span></a>
+                @auth
+                    <form class="store-logout" method="POST" action="{{ route('logout') }}">
+                        @csrf
+                        <button type="submit" class="store-logout-button">Cerrar sesión</button>
+                    </form>
+                @endauth
             </div>
         </div>
     </header>
     <main id="contenido" tabindex="-1">{{ $slot }}</main>
-    <footer class="store-footer" id="ayuda"><div class="store-wrap"><div><strong>REFUGIO OUTDOOR</strong><p>Equipo para tu próximo camino.</p></div><nav aria-label="Ayuda"><a href="{{ route('home') }}#contacto">Contacto</a><a href="{{ route('store.catalog') }}">Explorar catálogo</a><a href="{{ route('login') }}">Mi cuenta</a></nav></div></footer>
+    <footer class="store-footer" id="ayuda"><div class="store-wrap"><div><strong>REFUGIO OUTDOOR</strong><p>Equipo para tu próximo camino.</p></div><nav aria-label="Ayuda"><a href="{{ route('home') }}#contacto">Contacto</a><a href="{{ route('store.catalog') }}">Explorar catálogo</a><a href="{{ route('login') }}">Mi cuenta</a>@guest<a href="{{ route('register') }}">Crear cuenta</a>@endguest</nav></div></footer>
     <div class="catalog-toast" role="status" aria-live="polite" x-data="{ timer: null }" x-show="$store.shop.notice" x-cloak x-init="$watch('$store.shop.notice', value => { if (value) { clearTimeout(timer); timer = setTimeout(() => $store.shop.notice = '', 6000) } })"><span class="catalog-toast-check"><x-store-icon name="check" size="19" /></span><span x-text="$store.shop.notice"></span><a href="{{ route('store.cart') }}">Ver bolsa</a><button type="button" @click="$store.shop.notice = ''" aria-label="Cerrar aviso"><x-store-icon name="close" size="17" /></button></div>
     @livewireScripts
 </body>

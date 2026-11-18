@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Checkout;
 
 use App\Http\Controllers\Controller;
 use App\Models\Order;
+use App\Models\OrderItem;
+use App\Http\Requests\Checkout\PreOrderRequest;
 use App\Models\Product;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -15,20 +17,9 @@ use Stripe\Exception\ApiErrorException;
 
 class CheckoutController extends Controller
 {
-    public function store(Request $request): JsonResponse
+    public function store(PreOrderRequest $request): JsonResponse
     {
-        $data = $request->validate([
-            'email' => ['required', 'email', 'max:254'],
-            'currency' => ['required', 'in:MXN,USD'],
-            'idempotency_key' => ['required', 'uuid'],
-            'items' => ['required', 'array', 'min:1', 'max:50'],
-            'items.*.product_id' => [
-                'required', 'integer', 'min:1', 'distinct',
-            ],
-            'items.*.quantity' => [
-                'required', 'integer', 'min:1', 'max:99',
-            ],
-        ]);
+        $data = $request->validated();
 
         $items = collect($data['items'])
             ->map(fn (array $item) => [
@@ -189,7 +180,7 @@ class CheckoutController extends Controller
                 $lineTax = $nextTax - $allocatedTax;
                 $allocatedTax = $nextTax;
 
-                $orderItemId = DB::table('order_items')->insertGetId([
+                $orderItem = OrderItem::forceCreate([
                     'order_id' => $order->id,
                     'product_id' => $line['product']->id,
                     'sku_snapshot' => $line['product']->sku,
@@ -225,7 +216,7 @@ class CheckoutController extends Controller
 
                     DB::table('stock_reservations')->insert([
                         'operation_id' => (string) Str::uuid(),
-                        'order_item_id' => $orderItemId,
+                        'order_item_id' => $orderItem->id,
                         'product_id' => $line['product']->id,
                         'warehouse_id' => $balance->warehouse_id,
                         'quantity' => $quantity,
@@ -246,6 +237,13 @@ class CheckoutController extends Controller
             return $order;
         }, 3);
 
+        return response()->json(['data' => $order->load('items')], $order->wasRecentlyCreated ? 201 : 200);
+    }
+
+    // Existing optional Stripe flow preserved separately; pre-orders never invoke it.
+    public function payment(Request $request, Order $order): JsonResponse
+    {
+        abort_unless((int) $order->user_id === (int) $request->user()->id, 403);
         if ($order->status === 'paid') {
             return response()->json([
                 'message' => 'Este pedido ya está pagado.',

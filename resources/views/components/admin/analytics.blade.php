@@ -19,5 +19,5 @@
   </section>
   <section class="ro-panel ro-ranking"><header class="ro-section-heading"><div><h2>Los favoritos del camino</h2><p>Top 3 ilustrativo · 11–17 nov. 2026</p></div></header><p class="ro-footnote">Muestra fija de la semana; independiente del filtro de fechas.</p><ol><template x-for="(product, index) in top" :key="product.name"><li><span class="ro-rank" x-text="index + 1"></span><div><strong x-text="product.name"></strong><small x-text="product.category"></small><div class="ro-rank-track"><span :style="{width: (product.units / top[0].units * 100) + '%'}"></span></div></div><span class="ro-units"><strong x-text="product.units"></strong><small>unidades</small></span></li></template></ol><a class="ro-text-link" href="{{ route('admin.reports.top-products') }}">Ver reporte de productos</a></section>
  </div>
- @unless($ranking)<x-admin.data-table kind="orders" />@endunless
+ @unless($ranking)<x-admin.order-list />@endunless
 </section>

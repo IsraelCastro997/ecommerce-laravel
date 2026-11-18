@@ -1,1 +1,1 @@
-<div class="store-wrap blade-page"><x-admin.workspace title="Pedidos" dataset="orders"  /></div>
+<div class="store-wrap blade-page"><x-admin.navigation /><x-admin.order-list /></div>

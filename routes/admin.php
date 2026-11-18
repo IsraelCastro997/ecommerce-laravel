@@ -65,6 +65,7 @@ Route::middleware(['auth', 'can:access-admin'])
         Route::livewire('/suppliers', \App\Livewire\Admin\Suppliers\SupplierManager::class)->name('suppliers.index');
         Route::livewire('/suppliers/{supplier}', \App\Livewire\Admin\Suppliers\SupplierDetail::class)->name('suppliers.show');
     
+        Route::get('/dashboard/orders', [DashboardController::class, 'orders'])->name('dashboard.orders');
         Route::get('/dashboard/summary',[DashboardController::class,'summary'])->name('dashboard.summary');
         Route::get('/dashboard/sales',[DashboardController::class,'sales'])->name('dashboard.sales');
         Route::get('/dashboard/top-products',[DashboardController::class])->name('dashboard.top-products');

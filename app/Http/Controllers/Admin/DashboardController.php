@@ -11,6 +11,11 @@ use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
+    public function orders(): JsonResponse
+    {
+        return response()->json(Order::with('items')->orderByDesc('id')->paginate(10));
+    }
+
     public function summary(): JsonResponse
     {
         $paidOrders = Order::query()
