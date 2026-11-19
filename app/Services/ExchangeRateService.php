@@ -11,11 +11,12 @@ class ExchangeRateService
 {
     public function latestUsdMxn(): array
     {
-        return Cache::store('redis')->remember(
-            'banxico:fix:usd-mxn',
-            (int) config('services.banxico.cache_ttl', 1800),
-            fn (): array => $this->fetchLatestUsdMxn()
-        );
+        // return Cache::store('redis')->remember(
+        //     'banxico:fix:usd-mxn',
+        //     (int) config('services.banxico.cache_ttl', 1800),
+        //     fn (): array => $this->fetchLatestUsdMxn()
+        // );
+        return $this->fetchLatestUsdMxn();
     }
 
     private function fetchLatestUsdMxn(): array
@@ -73,6 +74,6 @@ class ExchangeRateService
 
     public function clearLatestCache(): void
     {
-        Cache::store('redis')->forget('banxico:fix:usd-mxn');
+        // Cache::store('redis')->forget('banxico:fix:usd-mxn');
     }
 }

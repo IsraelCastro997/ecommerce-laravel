@@ -5,7 +5,7 @@ namespace App\Services\Catalog;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
-use App\Models\ProductPriceSnapshot;
+use App\Models\PricePublication;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -15,95 +15,60 @@ use LogicException;
 class CatalogQueryService
 {
     /**
-     * Restringe los precios a publicaciones activas
-     * del mercado mexicano.
+     * Una única publicación vigente para todo el catálogo mexicano.
      */
-    private function publishedPrices(Builder $query): Builder
+    private function activePublicationId(): ?int
     {
-        return $query->whereHas(
-            'pricePublication',
-            fn (Builder $publication) => $publication
-                ->where('is_active', true)
-                ->where('status', 'published')
-                ->whereHas(
-                    'market',
-                    fn (Builder $market) => $market
-                        ->where('code', 'MX')
-                )
-        );
+        $ids = PricePublication::query()
+            ->where('is_active', true)
+            ->where('status', 'published')
+            ->whereHas('market', fn (Builder $market) => $market->where('code', 'MX'))
+            ->limit(2)
+            ->pluck('id');
+
+        if ($ids->count() > 1) {
+            throw new LogicException('Existe más de una publicación de precios vigente para México.');
+        }
+
+        return $ids->isEmpty() ? null : (int) $ids->first();
     }
 
-    /**
-     * Productos visibles para el catálogo.
-     */
     private function visibleProducts(Builder $query): Builder
     {
         return $query
-            ->where('status', 'active')
-            ->where(fn (Builder $q) => $q->whereNull('available_from')->orWhere('available_from', '<=', now()))
-            ->where(fn (Builder $q) => $q->whereNull('available_until')->orWhere('available_until', '>=', now()))
-            ->whereHas(
-                'priceSnapshots',
-                fn (Builder $snapshot) =>
-                    $this->publishedPrices($snapshot)
-            );
+            ->where('products.status', 'active')
+            ->where(fn (Builder $q) => $q->whereNull('products.available_from')->orWhere('products.available_from', '<=', now()))
+            ->where(fn (Builder $q) => $q->whereNull('products.available_until')->orWhere('products.available_until', '>=', now()));
     }
 
     /**
-     * Consulta base con relaciones precargadas.
+     * El mismo precio se usa para filtrar, ordenar y construir la respuesta.
      */
     private function query(): Builder
     {
+        $publicationId = $this->activePublicationId();
+
         return $this->visibleProducts(
             Product::query()
+                ->join('product_price_snapshots as catalog_price', function ($join) use ($publicationId) {
+                    $join->on('catalog_price.product_id', '=', 'products.id')
+                        ->where('catalog_price.price_publication_id', '=', $publicationId);
+                })
                 ->select([
-                    'products.id', 'sku', 'slug', 'name', 'image_url',
-                    'brand_id', 'primary_category_id', 'origin_country',
-                    'status', 'available_from', 'available_until',
+                    'products.id', 'products.sku', 'products.slug', 'products.name', 'products.image_url',
+                    'products.brand_id', 'products.primary_category_id', 'products.origin_country',
+                    'products.status', 'products.available_from', 'products.available_until',
                 ])
                 ->with([
                     'brand:id,name,slug',
                     'primaryCategory:id,name,slug',
-
-                    'priceSnapshots' => function (
-                        HasMany $relation
-                    ): void {
-                        $this->publishedPrices($relation->getQuery())
-                            ->with('pricePublication');
-                    },
+                    'priceSnapshots' => fn (HasMany $relation) => $relation
+                        ->where('price_publication_id', $publicationId),
                 ])
-                ->withSum(
-                    'inventoryBalances as stock_on_hand',
-                    'qty_on_hand'
-                )
-                ->withSum(
-                    'inventoryBalances as stock_reserved',
-                    'qty_reserved'
-                )
+                ->withSum('inventoryBalances as stock_on_hand', 'qty_on_hand')
+                ->withSum('inventoryBalances as stock_reserved', 'qty_reserved')
         );
     }
-
-    /**
-     * Subconsulta para ordenar por precio publicado.
-     */
-    private function priceOrderQuery(string $currency): Builder
-    {
-        $column = $currency === 'USD'
-            ? 'price_usd'
-            : 'price_mxn';
-
-        return $this->publishedPrices(
-            ProductPriceSnapshot::query()
-                ->select($column)
-                ->whereColumn(
-                    'product_id',
-                    'products.id'
-                )
-        )
-            ->orderByDesc('price_publication_id')
-            ->limit(1);
-    }
-
     /**
      * Busca productos con filtros y paginación.
      */
@@ -172,44 +137,35 @@ class CatalogQueryService
             isset($filters['max_price'])
             && $filters['max_price'] !== ''
         ) {
-            $query->whereHas(
-                'priceSnapshots',
-                fn (Builder $snapshot) =>
-                    $this->publishedPrices($snapshot)
-                        ->where(
-                            $priceColumn,
-                            '<=',
-                            $filters['max_price']
-                        )
-            );
+            $query->where('catalog_price.'.$priceColumn, '<=', $filters['max_price']);
         }
 
         switch ($filters['sort'] ?? 'newest') {
             case 'name':
-                $query->orderBy('name');
+                $query->orderBy('products.name');
                 break;
 
             case 'price_asc':
                 $query->orderBy(
-                    $this->priceOrderQuery($currency),
+                    'catalog_price.'.$priceColumn,
                     'asc'
                 );
                 break;
 
             case 'price_desc':
                 $query->orderBy(
-                    $this->priceOrderQuery($currency),
+                    'catalog_price.'.$priceColumn,
                     'desc'
                 );
                 break;
 
             default:
-                $query->orderByDesc('id');
+                $query->orderByDesc('products.id');
                 break;
         }
 
         if (($filters['sort'] ?? 'newest') !== 'newest') {
-            $query->orderBy('id');
+            $query->orderBy('products.id');
         }
 
         $page = $query->paginate(
@@ -254,8 +210,9 @@ class CatalogQueryService
      */
     public function filters(): array
     {
-        $visible = fn (Builder $query) =>
-            $this->visibleProducts($query);
+        $publicationId = $this->activePublicationId();
+        $visible = fn (Builder $query) => $this->visibleProducts($query)
+            ->whereHas('priceSnapshots', fn (Builder $prices) => $prices->where('price_publication_id', $publicationId));
 
         $brands = Brand::query()
             ->whereHas('products', $visible)

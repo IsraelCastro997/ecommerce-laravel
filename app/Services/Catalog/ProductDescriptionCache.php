@@ -25,11 +25,12 @@ class ProductDescriptionCache
 
         // A single database read for all cache misses on this page.
         $keys = $products->map(fn (Product $product) => self::key($product->id))->all();
-        $cache = Cache::store('redis');
-        $values = $cache->many($keys);
+        // $cache = Cache::store('redis');
+        // $values = $cache->many($keys);
+        $values = [];
         $missing = $products->filter(fn (Product $product) => ! is_array($values[self::key($product->id)] ?? null));
 
-        request()->attributes->set('catalog_descriptions_from_redis', $missing->isEmpty());
+        // request()->attributes->set('catalog_descriptions_from_redis', $missing->isEmpty());
 
         if ($missing->isNotEmpty()) {
             $rows = Product::query()->whereKey($missing->modelKeys())
@@ -39,7 +40,7 @@ class ProductDescriptionCache
                 $fresh[self::key($row->id)] = $row->only(self::FIELDS);
             }
             if ($fresh !== []) {
-                $cache->putMany($fresh, 3600);
+                // $cache->putMany($fresh, 3600);
                 $values = array_replace($values, $fresh);
             }
         }
@@ -54,6 +55,6 @@ class ProductDescriptionCache
 
     public static function forget(int $id): void
     {
-        Cache::store('redis')->forget(self::key($id));
+        // Cache::store('redis')->forget(self::key($id));
     }
 }
