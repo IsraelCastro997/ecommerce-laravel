@@ -124,7 +124,7 @@ class ProductController extends Controller
    {
       $product = $this->saveProduct($request);
       if ($request->expectsJson()) return response()->json(['message' => 'Producto creado.', 'update_url' => route('admin.products.update', $product), 'data' => $product], 201);
-      return redirect()->route('admin.products.edit', $product)->with('status', 'Producto creado.');
+      return redirect()->route('admin.products.index')->with('status', 'Producto creado.');
    }
 
    public function update(SaveProductRequest $request, Product $product)
