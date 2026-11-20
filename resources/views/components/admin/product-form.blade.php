@@ -4,7 +4,17 @@
 <p class="ro-error" role="alert" x-show="failure" x-text="failure" x-cloak></p>
 @if(session('status'))<p role="status" class="ro-notice">{{ session('status') }}</p>@endif
 @if($errors->any())<div role="alert" class="ro-error"><ul>@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
-<form class="blade-form" x-ref="form" novalidate @submit.prevent="submit()" @focusout="validate($event.target)" @input="changed($event.target)" @change="changed($event.target)" method="POST" action="{{ $product ? route('admin.products.update',$product) : route('admin.products.store') }}">
+<form class="blade-form" x-ref="form" novalidate @submit="
+    if (saving) { $event.preventDefault(); return; }
+    message = ''; failure = '';
+    for (const field of $refs.form.elements) validate(field);
+    if (!$refs.form.checkValidity()) {
+        $event.preventDefault();
+        $refs.form.querySelector(':invalid')?.focus();
+        return;
+    }
+    saving = true;
+" @focusout="validate($event.target)" @input="changed($event.target)" @change="changed($event.target)" method="POST" action="{{ $product ? route('admin.products.update',$product) : route('admin.products.store') }}">
 @csrf
 @if($product) @method('PUT') @endif
 <div class="blade-columns">
